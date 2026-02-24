@@ -1,0 +1,406 @@
+How to Run
+Install dependencies:
+bash
+npm install
+Configure 
+.env
+: Ensure GEMINI_API_KEY and SOC_API_KEY are set.
+Start the SOC:
+bash
+npm start
+Start the Capture Agent:
+bash
+node capture/zeekWatcher.js
+
+Comment
+Ctrl+Alt+M
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+PROJECT TITLE
+
+SkANDA Prime — Agentic AI Security Operations Center (SOC)
+
+PROJECT OVERVIEW
+
+SkANDA Prime is an AI-powered autonomous Security Operations Center (SOC) designed to monitor a laptop’s real network traffic, detect cyber threats using an LLM (Gemini API), reason about attacks in real time, and optionally execute automated mitigation actions.
+
+The system uses:
+
+Real network logs (Zeek)
+
+Gemini API (single API key)
+
+Node.js backend
+
+WebSocket real-time streaming
+
+Agentic architecture (logical multi-agent using one model)
+
+Existing advanced SOC dashboard UI (already built)
+
+The UI must remain unchanged stylistically.
+
+CURRENT SYSTEM GOAL
+
+Transform an animated SOC dashboard into a real AI cybersecurity monitoring system capable of:
+
+Monitoring laptop network traffic
+
+Detecting anomalies using AI reasoning
+
+Streaming AI thinking live
+
+Generating forensic reports
+
+Performing autonomous mitigation (with safety controls)
+
+✅ WHAT HAS BEEN IMPLEMENTED SO FAR
+1️⃣ Frontend (Already Provided UI)
+
+The system already contains a fully designed SOC dashboard including:
+
+Packet stream visualization
+
+Network map
+
+Threat feed
+
+Charts & analytics
+
+Live reasoning console
+
+Incident report generator
+
+Mitigation buttons
+
+Dark/light themes
+
+UI styling must remain unchanged.
+
+Frontend structure:
+
+frontend/
+ ├── index.html
+ └── js/
+     ├── api.js
+     ├── socket.js
+     └── dashboard.js
+
+AI events are injected into existing UI logic using adapters.
+
+2️⃣ Backend Core (Node.js + Express)
+
+Implemented:
+
+backend/
+ ├── server.js
+ ├── routes.js
+ ├── websocket.js
+ ├── controllers/
+ │     └── analysisController.js
+ ├── services/
+ │     ├── geminiAnalyzer.js
+ │     ├── mitigationAgent.js
+ │     ├── threatEngine.js
+ │     ├── reportGenerator.js
+ │     └── aiAgent.js
+ └── parsers/
+       └── zeekParser.js
+
+Features:
+
+REST API endpoints
+
+WebSocket broadcasting
+
+AI reasoning streaming
+
+Threat processing pipeline
+
+3️⃣ Network Monitoring (REAL DATA)
+
+Laptop monitoring implemented using:
+
+Zeek Network Monitor
+
+Flow:
+
+Laptop Traffic
+ → Zeek conn.log
+ → zeekWatcher.js
+ → Parser
+ → AI Analysis
+
+Files:
+
+capture/
+ ├── zeekWatcher.js
+ └── config.js
+
+Watcher reads new log lines continuously.
+
+4️⃣ Storage Layer
+
+Lightweight persistence added:
+
+storage/
+ ├── database.js
+ └── threatModel.js
+
+Stores detected threats in JSON database.
+
+5️⃣ Shared Utilities
+shared/
+ └── logger.js
+
+Provides centralized SOC logging.
+
+6️⃣ AI Integration (Single Gemini API Key)
+
+Only ONE Gemini API key is used.
+
+Multi-agent behavior achieved using role prompting.
+
+Implemented logical agents:
+
+Analyst Agent
+
+Detects threats.
+
+Planner Agent
+
+Chooses mitigation strategy.
+
+Responder Agent
+
+Validates execution safety.
+
+All agents call the same Gemini model.
+
+7️⃣ Live Gemini Reasoning Stream ✅
+
+AI reasoning is streamed live to dashboard console via WebSocket:
+
+AI → reasoning events → UI console
+
+Users see AI thinking step-by-step.
+
+8️⃣ Autonomous Mitigation Agent ✅
+
+System can:
+
+Evaluate mitigation automatically
+
+Enter SAFE MODE approval
+
+Execute firewall rule (iptables example)
+
+Broadcast mitigation status to UI
+
+Environment flags:
+
+AUTO_MITIGATION=true
+SAFE_MODE=true
+9️⃣ AI → UI Adapter
+
+AI outputs are converted into existing UI threat format.
+
+No UI redesign required.
+
+🔟 Reporting System
+
+Backend generates incident reports used by dashboard PDF exporter.
+
+🧠 CURRENT SYSTEM ARCHITECTURE
+Laptop Network Traffic
+        ↓
+Zeek Capture
+        ↓
+Log Watcher
+        ↓
+Parser
+        ↓
+Analyst Agent (Gemini)
+        ↓
+Planner Agent
+        ↓
+Responder Agent
+        ↓
+Mitigation Agent
+        ↓
+Storage
+        ↓
+WebSocket Broadcast
+        ↓
+SOC Dashboard UI
+✅ CURRENT CAPABILITIES
+
+The system already supports:
+
+Real network monitoring
+
+AI threat detection
+
+Live reasoning visualization
+
+Persistent incident storage
+
+AI forensic reporting
+
+Autonomous mitigation
+
+Analyst approval workflow
+
+Real-time dashboard updates
+
+🚧 WHAT STILL NEEDS TO BE DONE (NEXT PHASE)
+1️⃣ Agent Memory Layer (HIGH PRIORITY)
+
+Add session memory so AI remembers:
+
+previous attacks
+
+repeated IPs
+
+attack patterns
+
+escalation context
+
+Needed:
+
+backend/services/memoryAgent.js
+2️⃣ Threat Correlation Engine
+
+Detect multi-stage attacks:
+
+Example:
+
+Brute force → login success → data exfiltration
+
+Instead of isolated alerts.
+
+3️⃣ Streaming Gemini Responses (Token Streaming)
+
+Upgrade reasoning from step messages → real token streaming.
+
+4️⃣ Risk Scoring Engine
+
+Add dynamic risk score:
+
+Risk = frequency × severity × behavior anomaly
+
+Display in dashboard.
+
+5️⃣ Cross-Session Intelligence
+
+Load historical threats on startup.
+
+6️⃣ Secure Mitigation Layer
+
+Replace demo firewall command with:
+
+OS detection
+
+safe sandbox execution
+
+permission control
+
+7️⃣ Production Hardening
+
+Add:
+
+authentication
+
+API rate limiting
+
+log rotation
+
+error recovery
+
+8️⃣ Deployment Architecture
+
+Prepare for:
+
+Docker containers
+
+cloud deployment
+
+remote monitoring agents
+
+9️⃣ AI Cost Optimization
+
+Add:
+
+batching
+
+caching
+
+adaptive analysis frequency
+
+🔮 FUTURE ROADMAP (OPTIONAL)
+
+Multi-host monitoring
+
+RAG threat intelligence
+
+MITRE ATT&CK mapping
+
+AI attack simulation
+
+Self-learning SOC agent
+
+FINAL OBJECTIVE
+
+Create a fully agentic AI Security Operations Center capable of:
+
+observing
+
+reasoning
+
+planning
+
+acting
+
+learning
+
+using a single LLM API.
+
+End of Context

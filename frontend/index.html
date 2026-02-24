@@ -1,0 +1,1673 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SkANDA Prime | Agentic SOC</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Charts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- PDF Export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <!-- Network Map -->
+  <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+
+  <script>
+    // Patch to suppress benign ResizeObserver errors common with Chart.js/Vis.js in dynamic layouts
+    window.addEventListener('error', function (event) {
+      if (event.message === 'ResizeObserver loop completed with undelivered notifications.') {
+        event.stopImmediatePropagation();
+      }
+    });
+  </script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap');
+
+    body {
+      font-family: 'Inter', sans-serif;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+
+    /* Light mode scrollbar for report */
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    /* Background Grid */
+    .grid-bg {
+      background-color: #020617;
+      background-image:
+        linear-gradient(rgba(16, 185, 129, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(16, 185, 129, 0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    /* --- LIGHT THEME OVERRIDES --- */
+    body.light-theme {
+      background-color: #f8fafc;
+      /* slate-50 */
+      color: #334155;
+      /* slate-700 */
+    }
+
+    body.light-theme .grid-bg {
+      background-color: #f8fafc;
+      background-image:
+        linear-gradient(rgba(16, 185, 129, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(16, 185, 129, 0.08) 1px, transparent 1px);
+    }
+
+    body.light-theme .glass-panel {
+      background: rgba(255, 255, 255, 0.7);
+      border-color: #cbd5e1;
+      /* slate-300 */
+      backdrop-filter: blur(10px);
+    }
+
+    body.light-theme .glass-inner {
+      background: rgba(241, 245, 249, 0.6);
+      /* slate-100 */
+      border-color: #e2e8f0;
+    }
+
+    body.light-theme header.bg-slate-950\/90 {
+      background-color: rgba(255, 255, 255, 0.9);
+      border-bottom-color: #cbd5e1;
+    }
+
+    /* Override specific dark utility classes when in light mode */
+    body.light-theme .text-slate-300 {
+      color: #334155;
+    }
+
+    body.light-theme .text-slate-400 {
+      color: #64748b;
+    }
+
+    body.light-theme .text-slate-500 {
+      color: #94a3b8;
+    }
+
+    body.light-theme .bg-slate-900,
+    body.light-theme .bg-slate-950,
+    body.light-theme .bg-black\/40 {
+      background-color: #ffffff;
+    }
+
+    body.light-theme .bg-slate-900\/50 {
+      background-color: #f1f5f9;
+    }
+
+    body.light-theme .bg-slate-900\/40 {
+      background-color: #f8fafc;
+    }
+
+    body.light-theme .bg-slate-800 {
+      background-color: #e2e8f0;
+      color: #0f172a;
+    }
+
+    body.light-theme .bg-slate-800\/50 {
+      background-color: #f1f5f9;
+    }
+
+    body.light-theme .border-slate-800 {
+      border-color: #cbd5e1;
+    }
+
+    body.light-theme .border-slate-700 {
+      border-color: #94a3b8;
+    }
+
+    body.light-theme .hover\:bg-slate-800:hover {
+      background-color: #e2e8f0;
+    }
+
+    body.light-theme input::placeholder {
+      color: #94a3b8;
+    }
+
+    /* Chart container fix for light mode */
+    body.light-theme canvas {
+      filter: contrast(1.1);
+    }
+
+    /* Scanline Effect */
+    .scan-line {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(to bottom, transparent 50%, rgba(0, 0, 0, 0.2) 51%);
+      background-size: 100% 4px;
+      pointer-events: none;
+      z-index: 50;
+      opacity: 0.3;
+    }
+
+    /* Animations */
+    @keyframes spin-slow {
+      from {
+        transform: translate(-50%, -50%) rotate(0deg);
+      }
+
+      to {
+        transform: translate(-50%, -50%) rotate(360deg);
+      }
+    }
+
+    .spin-slow {
+      animation: spin-slow 20s linear infinite;
+    }
+
+    @keyframes pulse-red {
+
+      0%,
+      100% {
+        opacity: 0;
+      }
+
+      50% {
+        opacity: 0.3;
+      }
+    }
+
+    .alert-pulse {
+      animation: pulse-red 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    @keyframes typing {
+      from {
+        opacity: 0;
+        transform: translateY(2px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .typing {
+      animation: typing 0.2s ease-out forwards;
+    }
+
+    /* UI States */
+    .view-btn.active {
+      background-color: #1e293b;
+      color: #10b981;
+      border: 1px solid #059669;
+    }
+
+    body.light-theme .view-btn.active {
+      background-color: #e2e8f0;
+      color: #059669;
+      border-color: #10b981;
+    }
+
+    .tab-active {
+      background-color: rgba(2, 6, 23, 0.8);
+      color: #34d399;
+      /* emerald-400 */
+      border-top: 2px solid #10b981;
+    }
+
+    body.light-theme .tab-active {
+      background-color: #f1f5f9;
+      color: #059669;
+      border-top-color: #059669;
+    }
+
+    .tab-inactive {
+      background-color: transparent;
+      color: #64748b;
+      /* slate-500 */
+      border-top: 2px solid transparent;
+    }
+
+    .tab-inactive:hover {
+      color: #94a3b8;
+      background-color: rgba(30, 41, 59, 0.3);
+    }
+
+    body.light-theme .tab-inactive:hover {
+      background-color: #e2e8f0;
+      color: #475569;
+    }
+
+    /* Network Map */
+    #left-network-map {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Perf Bar */
+    .perf-bar {
+      transition: width 0.5s ease-out;
+    }
+
+    /* Attn Grid */
+    #attention-grid {
+      grid-template-columns: repeat(12, 1fr);
+    }
+
+    .attn-cell {
+      width: 100%;
+      padding-top: 100%;
+      /* 1:1 Aspect Ratio */
+      border-radius: 2px;
+      transition: background-color 0.1s;
+    }
+
+    /* Report Specific Styles */
+    .report-card {
+      border-left: 4px solid #cbd5e1;
+      transition: all 0.2s;
+    }
+
+    .report-card.CRITICAL {
+      border-left-color: #ef4444;
+      background-color: #fef2f2;
+    }
+
+    .report-card.HIGH {
+      border-left-color: #f97316;
+      background-color: #fff7ed;
+    }
+
+    .report-card.MEDIUM {
+      border-left-color: #eab308;
+      background-color: #fefce8;
+    }
+
+    .report-card.LOW {
+      border-left-color: #3b82f6;
+      background-color: #eff6ff;
+    }
+  </style>
+</head>
+
+<body class="h-screen overflow-hidden grid-bg text-slate-300 select-none">
+
+  <!-- LANDING PAGE (HOME SCREEN) -->
+  <div id="landing-page"
+    class="absolute inset-0 z-50 flex flex-col items-center justify-center bg-slate-950 transition-opacity duration-500">
+    <!-- Decor -->
+    <div class="absolute inset-0 opacity-20 pointer-events-none overflow-hidden">
+      <div
+        class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] border border-emerald-500/20 rounded-full spin-slow">
+      </div>
+      <div
+        class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] border border-blue-500/20 rounded-full spin-slow"
+        style="animation-direction: reverse; animation-duration: 15s;"></div>
+    </div>
+    <!-- Card -->
+    <div
+      class="relative z-10 text-center space-y-8 p-10 bg-slate-900/50 backdrop-blur-xl rounded-2xl border border-slate-700 shadow-2xl max-w-lg w-full mx-4">
+      <div class="flex justify-center mb-4">
+        <div class="relative">
+          <i data-lucide="shield-check" class="w-20 h-20 text-emerald-500"></i>
+          <span class="absolute top-0 right-0 w-4 h-4 bg-emerald-400 rounded-full animate-ping"></span>
+        </div>
+      </div>
+      <div>
+        <h1 class="text-4xl font-bold text-white tracking-widest uppercase mb-2">SkANDA <span
+            class="text-emerald-500">PRIME</span></h1>
+        <p class="text-slate-400 font-mono text-sm">Autonomous SOC & Threat Detection System</p>
+      </div>
+      <!-- Buttons -->
+      <div class="flex flex-col gap-3 pt-4">
+        <button onclick="enterDashboard()"
+          class="group relative w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 px-6 rounded transition-shadow shadow-lg hover:shadow-xl overflow-hidden">
+          <span class="relative z-10 flex items-center justify-center gap-3 tracking-wider">
+            <i data-lucide="radio" class="w-5 h-5"></i> INITIALIZE NETWORK CAPTURE
+          </span>
+          <div
+            class="absolute inset-0 h-full w-full scale-0 rounded-2xl transition-all duration-300 group-hover:scale-100 group-hover:bg-emerald-500/50">
+          </div>
+        </button>
+
+        <!-- Upload button -->
+        <div class="relative">
+          <input type="file" id="landing-upload" class="hidden" accept=".json,.csv,.txt,.pcap,.log"
+            onchange="handleLandingUpload(this)">
+          <button onclick="document.getElementById('landing-upload').click()"
+            class="w-full bg-slate-800/50 hover:bg-slate-800 text-slate-300 hover:text-white font-bold py-3 px-6 rounded border border-slate-700 hover:border-emerald-500/30 transition-all flex items-center justify-center gap-2 text-sm group">
+            <i data-lucide="file-up" class="w-4 h-4"></i> UPLOAD WIRESHARK LOGS
+          </button>
+        </div>
+
+        <!-- Connect button -->
+        <button onclick="enterDashboard()"
+          class="w-full bg-slate-800/50 hover:bg-slate-800 text-slate-300 hover:text-white font-bold py-3 px-6 rounded border border-slate-700 hover:border-emerald-500/30 transition-all flex items-center justify-center gap-2 text-sm group">
+          <i data-lucide="globe" class="w-4 h-4"></i> CONNECT VIA NETWORK STREAM
+        </button>
+        <div class="text-[10px] text-slate-500 font-mono mt-2">v3.2.0 | SECURE CONNECTION READY</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DASHBOARD (Hidden initially) -->
+  <div id="dashboard-view"
+    class="h-screen flex flex-col hidden opacity-0 transition-opacity duration-700 overflow-hidden">
+    <!-- Navbar -->
+    <header
+      class="bg-slate-950/90 border-b border-slate-800 p-3 flex justify-between items-center shadow-lg z-20 backdrop-blur-md shrink-0">
+      <div class="flex items-center gap-3">
+        <div class="relative">
+          <i data-lucide="shield-check" class="w-8 h-8 text-emerald-500"></i>
+          <span class="absolute top-0 right-0 w-2 h-2 bg-emerald-400 rounded-full animate-ping"></span>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold tracking-widest text-emerald-400 uppercase">SkANDA <span
+              class="text-slate-500">AGENTIC</span></h1>
+          <p class="text-[10px] text-slate-500 uppercase tracking-wide">LLM-Powered Security Operations</p>
+        </div>
+      </div>
+      <!-- Metrics -->
+      <div class="hidden md:flex gap-8 text-[10px] uppercase tracking-wider text-slate-500">
+        <div>
+          <span class="block text-slate-400">Analysis Rate</span>
+          <span class="text-emerald-400 font-mono text-sm" id="pps-counter">0/sec</span>
+        </div>
+        <div>
+          <span class="block text-slate-400">Agent Status</span>
+          <span class="text-blue-400 font-mono text-sm flex items-center gap-1">
+            <span id="agent-status-indicator" class="w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse"></span>
+            <span id="agent-status-text">REASONING</span>
+          </span>
+        </div>
+        <div>
+          <span class="block text-slate-400">Active Nodes</span>
+          <span class="text-purple-400 font-mono text-sm">42</span>
+        </div>
+      </div>
+      <!-- Controls -->
+      <div class="flex items-center gap-4">
+
+        <!-- Theme Toggle -->
+        <button onclick="toggleTheme()" id="theme-toggle-btn"
+          class="p-2 rounded bg-slate-900 border border-slate-800 text-yellow-400 hover:bg-slate-800 transition"
+          title="Toggle Light/Dark Mode">
+          <i data-lucide="sun" class="w-4 h-4"></i>
+        </button>
+
+        <!-- Live Feed Indicator -->
+        <div class="flex items-center gap-2 bg-slate-900 border border-slate-800 rounded px-3 py-1.5">
+          <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+          <span class="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">Live Telemetry</span>
+        </div>
+        <!-- Threat Level -->
+        <div class="text-right">
+          <div class="text-[10px] text-slate-500 uppercase">Threat Level</div>
+          <div id="global-threat-level" class="text-xs font-bold text-emerald-500">LOW</div>
+        </div>
+        <!-- Generate report -->
+        <button onclick="generateReport()"
+          class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-sm text-xs font-bold transition flex items-center gap-2 border border-blue-500 shadow-[0_0_15px_rgba(37,99,235,0.3)]">
+          <i data-lucide="file-pie-chart" class="w-4 h-4"></i> GENERATE REPORT
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 min-h-0 overflow-hidden relative grid grid-cols-12 gap-0">
+      <div class="scan-line"></div>
+
+      <!-- Left: Wire Stream (3 Cols) -->
+      <div class="col-span-3 border-r border-slate-800 flex flex-col z-10 bg-slate-900/40 min-h-0 min-w-0 h-full">
+        <div class="flex flex-col flex-1 glass-panel min-h-0">
+          <div class="p-2 bg-slate-900/50 border-b border-slate-800 flex justify-between items-center">
+            <h2 class="text-xs font-bold text-slate-300 flex items-center gap-2 uppercase tracking-wide">
+              <i data-lucide="network" class="w-3 h-3 text-blue-500"></i> Wire Stream
+            </h2>
+            <div class="flex gap-1 items-center" id="stream-status">
+              <span class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+              <span class="text-[9px] text-blue-400 font-bold">1:200 SAMPLING</span>
+            </div>
+          </div>
+          <div
+            class="flex px-2 py-1 bg-slate-950 text-[10px] text-slate-500 font-bold border-b border-slate-800 uppercase">
+            <span class="w-10">PROTO</span>
+            <span class="w-24">SOURCE</span>
+            <span class="w-4"></span>
+            <span class="w-24">DEST</span>
+            <span class="ml-auto">LEN</span>
+          </div>
+          <div id="packet-stream" class="flex-1 overflow-y-auto font-mono text-[10px] space-y-[1px] bg-slate-950/30">
+          </div>
+        </div>
+      </div>
+
+      <!-- Center: Visualizer & Agent Core (6 Cols) -->
+      <div class="col-span-6 border-r border-slate-800 flex flex-col bg-slate-900/40 z-10 min-h-0 min-w-0 h-full">
+        <!-- Top Charts & Visualizer -->
+        <div class="h-[45%] flex flex-col border-b border-slate-800 min-h-0">
+          <div class="p-2 bg-slate-900/50 border-b border-slate-800 flex justify-between items-center">
+            <h2 class="text-xs font-bold text-slate-300 flex items-center gap-2 uppercase tracking-wide">
+              <i data-lucide="monitor-dot" class="w-3 h-3 text-purple-500"></i> Analytics Visualizer
+            </h2>
+            <!-- Tabs -->
+            <div class="flex gap-1 bg-slate-800/50 p-0.5 rounded border border-slate-700">
+              <button onclick="switchView('pie')" id="btn-pie"
+                class="view-btn active px-2 py-0.5 text-[9px] uppercase font-bold rounded text-slate-500 hover:text-slate-300 transition">Distribution</button>
+              <button onclick="switchView('line')" id="btn-line"
+                class="view-btn px-2 py-0.5 text-[9px] uppercase font-bold rounded text-slate-500 hover:text-slate-300 transition">Timeline</button>
+            </div>
+          </div>
+          <!-- Charts -->
+          <div class="flex flex-1 p-4 gap-4 overflow-hidden relative">
+            <div class="flex-1 relative glass-panel rounded p-2 flex flex-col items-center justify-center">
+              <div id="view-pie" class="w-full h-full relative"><canvas id="threatPieChart"></canvas></div>
+              <div id="view-line" class="w-full h-full hidden relative"><canvas id="trafficLineChart"></canvas></div>
+            </div>
+            <!-- Ports mini grid -->
+            <div class="w-24 grid grid-rows-3 gap-2">
+              <div
+                class="tech-card bg-slate-800/50 border border-slate-700 p-2 rounded text-center flex flex-col justify-center">
+                <div class="text-[8px] text-slate-500 font-bold tracking-wide">HTTP</div>
+                <div class="text-[10px] font-bold text-emerald-400 port-status" data-port="80">OK</div>
+              </div>
+              <div
+                class="tech-card bg-slate-800/50 border border-slate-700 p-2 rounded text-center flex flex-col justify-center">
+                <div class="text-[8px] text-slate-500 font-bold tracking-wide">HTTPS</div>
+                <div class="text-[10px] font-bold text-emerald-400 port-status" data-port="443">OK</div>
+              </div>
+              <div
+                class="tech-card bg-slate-800/50 border border-slate-700 p-2 rounded text-center flex flex-col justify-center">
+                <div class="text-[8px] text-slate-500 font-bold tracking-wide">SSH</div>
+                <div class="text-[10px] font-bold text-emerald-400 port-status" data-port="22">OK</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom: Console & Metrics -->
+        <div class="flex-1 flex flex-col bg-black/40 relative min-h-0">
+          <!-- Tabs header -->
+          <div class="px-2 pt-1 bg-slate-900/80 border-b border-slate-700 flex justify-between items-center h-10">
+            <div class="flex gap-2 h-full items-end">
+              <button onclick="switchAgentTab('console')" id="tab-console"
+                class="px-3 h-9 text-[10px] font-bold uppercase tracking-wider tab-active flex items-center gap-2 transition rounded-t-md">
+                <i data-lucide="terminal" class="w-3 h-3"></i> Live Reasoning
+              </button>
+              <button onclick="switchAgentTab('metrics')" id="tab-metrics"
+                class="px-3 h-9 text-[10px] font-bold uppercase tracking-wider tab-inactive flex items-center gap-2 transition rounded-t-md">
+                <i data-lucide="activity" class="w-3 h-3"></i> Agent Metrics
+              </button>
+            </div>
+            <span
+              class="text-[9px] bg-emerald-950/80 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/30 font-mono">SAMPLING:
+              1/200</span>
+          </div>
+
+          <div id="agent-console-container" class="flex-1 min-h-0 flex flex-col">
+            <div id="agent-console"
+              class="flex-1 p-3 font-mono text-xs overflow-y-auto space-y-2 text-slate-300 custom-scrollbar">
+              <div class="text-slate-500 italic opacity-50"># Waiting for network telemetry...</div>
+            </div>
+          </div>
+
+          <div id="agent-metrics" class="hidden flex-1 p-3 overflow-y-auto bg-slate-950/50 custom-scrollbar">
+            <div class="grid grid-cols-2 gap-3">
+              <!-- Control panel -->
+              <div class="flex flex-col gap-3">
+                <div class="glass-inner p-2 rounded-md">
+                  <div class="flex justify-between items-center mb-2">
+                    <h4 class="text-[9px] text-slate-400 uppercase font-bold flex items-center gap-1 tracking-wider">
+                      <i data-lucide="sliders" class="w-3 h-3 text-pink-500"></i> Hyperparameters
+                    </h4>
+                    <span class="text-[8px] bg-slate-800 text-slate-400 px-1.5 rounded border border-slate-700">API
+                      v2.1</span>
+                  </div>
+                  <div class="space-y-2">
+                    <div class="flex justify-between items-center text-[9px] text-slate-500 font-bold">
+                      <label>MODEL_ID</label>
+                      <select id="model-select" onchange="changeModel(this.value)"
+                        class="bg-slate-900 border border-slate-700 text-[9px] text-emerald-400 rounded px-2 py-0.5 w-32 cursor-pointer focus:outline-none focus:border-emerald-500">
+                        <option value="llama3">Llama-3-70B</option>
+                        <option value="gpt4o" selected>GPT-4o</option>
+                        <option value="claude35">Claude-3.5</option>
+                        <option value="gemini15">Gemini-1.5</option>
+                      </select>
+                    </div>
+                    <!-- Temperature slider -->
+                    <div class="space-y-1">
+                      <div class="flex justify-between text-[9px] text-slate-500 mb-1 font-medium">
+                        <span>TEMPERATURE</span>
+                        <span id="temp-val" class="font-mono text-pink-400">0.70</span>
+                      </div>
+                      <input type="range" min="0" max="100" value="70"
+                        class="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer"
+                        oninput="updateTemp(this.value)">
+                    </div>
+                    <!-- Action buttons -->
+                    <div class="grid grid-cols-2 gap-2 pt-1">
+                      <button onclick="triggerAPI('flush')" id="btn-flush"
+                        class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-[8px] text-slate-300 py-1 rounded transition flex items-center justify-center gap-1">
+                        <i data-lucide="trash-2" class="w-2.5 h-2.5"></i> FLUSH KV
+                      </button>
+                      <button onclick="triggerAPI('sync')" id="btn-sync"
+                        class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-[8px] text-slate-300 py-1 rounded transition flex items-center justify-center gap-1">
+                        <i data-lucide="refresh-cw" class="w-2.5 h-2.5"></i> SYNC RAG
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Attack Patterns -->
+                <div class="glass-inner p-3 rounded-md flex-1 overflow-y-auto">
+                  <h4 class="text-[9px] text-slate-400 uppercase font-bold mb-3 flex items-center gap-1 tracking-wider">
+                    <i data-lucide="crosshair" class="w-3 h-3 text-emerald-500"></i> Vector Similarity
+                  </h4>
+                  <div class="space-y-2.5">
+                    <div>
+                      <div class="flex justify-between text-[9px] text-slate-400 mb-1 font-medium">
+                        <span>SQLi Embeddings</span>
+                        <span class="perf-metric font-mono text-emerald-400" data-base="92">0.92</span>
+                      </div>
+                      <div class="w-full bg-slate-950 h-1.5 rounded-full overflow-hidden border border-white/5">
+                        <div
+                          class="bg-gradient-to-r from-emerald-600 to-emerald-400 h-full perf-bar shadow-[0_0_8px_rgba(52,211,153,0.5)]"
+                          style="width: 92%"></div>
+                      </div>
+                    </div>
+                    <div>
+                      <div class="flex justify-between text-[9px] text-slate-400 mb-1 font-medium">
+                        <span>SMB Payload Alignment</span>
+                        <span class="perf-metric font-mono text-blue-400" data-base="98">0.98</span>
+                      </div>
+                      <div class="w-full bg-slate-950 h-1.5 rounded-full overflow-hidden border border-white/5">
+                        <div
+                          class="bg-gradient-to-r from-blue-600 to-blue-400 h-full perf-bar shadow-[0_0_8px_rgba(96,165,250,0.5)]"
+                          style="width: 98%"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right column: Telemetry & Attention Map -->
+              <div class="flex flex-col gap-3">
+                <!-- Telemetry info -->
+                <div class="grid grid-cols-3 gap-2">
+                  <div class="tech-card bg-slate-800/50 p-1.5 rounded text-center">
+                    <div class="text-[8px] text-slate-500 uppercase font-bold tracking-wide">Tokens/Sec</div>
+                    <div class="text-xs font-mono text-emerald-400 mt-0.5" id="metric-tps">482</div>
+                  </div>
+                  <div class="tech-card bg-slate-800/50 p-1.5 rounded text-center">
+                    <div class="text-[8px] text-slate-500 uppercase font-bold tracking-wide">Perplexity</div>
+                    <div class="text-xs font-mono text-orange-400 mt-0.5" id="metric-ppl">1.04</div>
+                  </div>
+                  <div class="tech-card bg-slate-800/50 p-1.5 rounded text-center">
+                    <div class="text-[8px] text-slate-500 uppercase font-bold tracking-wide">KV Cache</div>
+                    <div class="text-xs font-mono mt-0.5" id="metric-kv">84%</div>
+                  </div>
+                </div>
+                <!-- Attention Map -->
+                <div class="glass-inner p-3 rounded-md">
+                  <div class="flex justify-between items-center mb-2">
+                    <h4 class="text-[9px] text-slate-400 uppercase font-bold flex items-center gap-1 tracking-wider">
+                      <i data-lucide="grid" class="w-3 h-3 text-purple-500"></i> Multi-Head Attention
+                    </h4>
+                    <span class="text-[8px] text-slate-600 font-mono">LAYER 12</span>
+                  </div>
+                  <div class="grid grid-cols-8 gap-1" id="attention-grid"></div>
+                </div>
+                <!-- Chain of Thought -->
+                <div class="glass-inner p-3 rounded-md flex-1 flex flex-col">
+                  <h4 class="text-[9px] text-slate-400 uppercase font-bold mb-2 flex items-center gap-1 tracking-wider">
+                    <i data-lucide="git-branch" class="w-3 h-3 text-orange-500"></i> Chain-of-Thought
+                  </h4>
+                  <div id="cot-log"
+                    class="flex-1 font-mono text-[9px] text-slate-400 space-y-2 overflow-y-auto relative pl-3 border-l border-slate-700/50 ml-1">
+                    <div class="relative"><span
+                        class="absolute -left-3.5 top-1.5 w-1.5 h-1.5 bg-slate-600 rounded-full"></span>Decoding packet
+                      header...</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Intelligence & Map (3 Cols) -->
+      <div class="col-span-3 flex flex-col bg-slate-900/40 z-10 border-l border-slate-800 min-h-0 min-w-0 h-full">
+        <!-- Top Row: Local Map Aligned with Visualizer -->
+        <div class="h-[45%] flex flex-col border-b border-slate-800 min-h-0">
+          <div class="p-2 bg-slate-950/50 border-b border-slate-800 flex justify-between items-center">
+            <h4 class="text-xs font-bold uppercase text-slate-300 flex items-center gap-2 tracking-wide"><i
+                data-lucide="map" class="w-3 h-3 text-blue-400"></i> Local Network</h4>
+            <span class="text-[9px] text-slate-500 font-bold">6 NODES</span>
+          </div>
+          <div id="left-network-map" class="flex-1 bg-black/20 relative"></div>
+        </div>
+
+        <!-- Bottom Row: Threat Intelligence -->
+        <div class="flex-1 flex flex-col min-h-0 overflow-hidden">
+          <div class="p-2 bg-slate-950/50 border-b border-slate-800 flex justify-between items-center">
+            <h2 class="text-xs font-bold text-slate-300 flex items-center gap-2 uppercase tracking-wide">
+              <i data-lucide="flame" class="w-3 h-3 text-red-500"></i> Threats
+            </h2>
+            <div id="threat-count" class="text-[9px] font-bold bg-slate-800 px-2 py-0.5 rounded text-slate-400">0</div>
+          </div>
+          <div id="threat-feed" class="flex-1 overflow-y-auto p-3 space-y-3 bg-red-950/5 custom-scrollbar">
+            <div class="h-full flex items-center justify-center text-slate-700 italic text-[10px]" id="no-threats-msg">
+              <span>Everything is secure.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- REPORT MODAL (Fixed Layout) -->
+  <!-- ... existing report modal ... -->
+  <div id="report-modal"
+    class="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center hidden backdrop-blur-sm p-4">
+    <div
+      class="bg-slate-50 text-slate-800 w-full max-w-[210mm] h-[90vh] rounded-lg shadow-2xl relative flex flex-col overflow-hidden">
+      <!-- Header: Always visible -->
+      <div class="p-4 flex justify-between items-center bg-white border-b border-slate-200 z-10 shrink-0">
+        <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">Report Preview</div>
+        <div class="flex gap-2">
+          <button onclick="exportPDF()"
+            class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-bold flex items-center gap-2 transition shadow-sm">
+            <i data-lucide="download" class="w-4 h-4"></i> <span class="hidden sm:inline">DOWNLOAD PDF</span>
+          </button>
+          <button onclick="closeReport()"
+            class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1.5 rounded text-xs font-bold transition">
+            CLOSE
+          </button>
+        </div>
+      </div>
+      <!-- Scrollable Body -->
+      <div class="flex-1 overflow-y-auto p-4 sm:p-8 bg-slate-100 custom-scrollbar">
+        <!-- Report Content -->
+        <div class="bg-white shadow-lg min-h-[297mm] p-8 md:p-12 mx-auto" id="report-content">
+          <!-- ... existing report content ... -->
+          <div class="border-b-2 border-slate-800 pb-4 flex justify-between items-end mb-8">
+            <div>
+              <h1 class="text-3xl font-bold text-slate-900 uppercase tracking-tight">Incident Report</h1>
+              <p class="text-slate-500 text-sm mt-1">Generated by SkANDA Prime | AI-Driven Forensics</p>
+            </div>
+            <div class="text-right">
+              <div class="text-xs font-mono text-slate-500">REF-ID: <span id="report-id">2024-X99</span></div>
+              <div class="text-xs font-mono text-slate-500" id="report-date"></div>
+            </div>
+          </div>
+          <!-- Summary Stats -->
+          <div class="bg-slate-50 p-6 rounded border border-slate-200 mb-8">
+            <h2 class="text-sm font-bold uppercase text-slate-500 mb-4 tracking-wider border-b border-slate-200 pb-2">
+              Executive Summary</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+              <div class="p-4 bg-white rounded border border-slate-200 text-center">
+                <div class="text-3xl font-bold text-red-600" id="report-total-threats">0</div>
+                <div class="text-[10px] uppercase text-slate-400 font-bold mt-1">Total Threats</div>
+              </div>
+              <div class="p-4 bg-white rounded border border-slate-200 text-center">
+                <div class="text-3xl font-bold text-emerald-600">100%</div>
+                <div class="text-[10px] uppercase text-slate-400 font-bold mt-1">Mitigation Rate</div>
+              </div>
+              <div class="p-4 bg-white rounded border border-slate-200 text-center">
+                <div class="text-3xl font-bold text-blue-600">Active</div>
+                <div class="text-[10px] uppercase text-slate-400 font-bold mt-1">AI Status</div>
+              </div>
+              <div class="p-4 bg-white rounded border border-slate-200 text-center">
+                <div class="text-3xl font-bold text-purple-600" id="report-duration">00:00</div>
+                <div class="text-[10px] uppercase text-slate-400 font-bold mt-1">Session Time</div>
+              </div>
+            </div>
+            <p class="text-xs md:text-sm text-slate-600 leading-relaxed text-justify">
+              The autonomous agent successfully intercepted multiple attack vectors. The visual data below represents
+              the distribution of threat severity encountered during the active monitoring session. Immediate
+              countermeasures were deployed for all critical incidents.
+            </p>
+          </div>
+          <!-- Visual Analytics -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+            <div>
+              <h2 class="text-sm font-bold uppercase text-slate-500 mb-4 tracking-wider border-b border-slate-200 pb-2">
+                Severity Distribution</h2>
+              <div class="h-48 relative border border-slate-100 rounded bg-slate-50 p-2">
+                <canvas id="reportSeverityChart"></canvas>
+              </div>
+            </div>
+            <div>
+              <h2 class="text-sm font-bold uppercase text-slate-500 mb-4 tracking-wider border-b border-slate-200 pb-2">
+                Attack Vector Breakdown</h2>
+              <div class="h-48 relative border border-slate-100 rounded bg-slate-50 p-2">
+                <canvas id="reportVectorChart"></canvas>
+              </div>
+            </div>
+          </div>
+          <!-- Detailed Incident Log -->
+          <div>
+            <h2 class="text-sm font-bold uppercase text-slate-500 mb-6 tracking-wider border-b border-slate-200 pb-2">
+              Forensic Analysis & Incident Log</h2>
+            <div id="report-detailed-log" class="space-y-4">
+              <!-- Detailed cards injected via JS -->
+            </div>
+          </div>
+          <!-- Footer -->
+          <div class="mt-12 pt-4 border-t border-slate-200 flex justify-between items-center">
+            <div class="text-[10px] text-slate-400 uppercase">Confidential Document - Internal Use Only</div>
+            <div class="text-[10px] text-slate-400 font-mono">SkANDA v3.2.0</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ... (existing variable definitions) ...
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+
+    // Adapter entry point for AI threats
+    window.triggerThreatFromAI = function (ai) {
+
+      const incident = {
+        id: ai.id,
+        src: ai.src,
+        title: ai.title,
+        type: ai.type,
+        severity: ai.severity,
+        riskScore: ai.riskScore || 0, // NEW: Risk Score integration
+        port: ai.port,
+        desc: ai.desc,
+        rec: ai.rec,
+        timestamp: new Date().toLocaleTimeString()
+      };
+
+      detectedThreats.push(incident);
+
+      // Trigger standard UI update logic
+      renderThreatItem(incident);
+    };
+
+    function renderThreatItem(incident) {
+      const threatLevel = document.getElementById('global-threat-level');
+      threatLevel.innerText = "CRITICAL";
+      threatLevel.className = "text-xs font-bold text-red-500 animate-pulse";
+
+      const portEl = document.querySelector(`.port-status[data-port="${incident.port}"]`);
+      if (portEl) {
+        portEl.innerText = "ATTACK";
+        portEl.className = "text-xs font-bold text-red-500 animate-pulse port-status";
+      }
+
+      // Flash node red on map
+      if (networkNodes) {
+        const nodeId = Math.floor(Math.random() * 6) + 1;
+        const originalColors = { 1: '#3b82f6', 2: '#64748b', 3: '#10b981', 4: '#10b981', 5: '#a855f7', 6: '#f59e0b' };
+        networkNodes.update({ id: nodeId, color: { background: '#ef4444' } });
+        setTimeout(() => {
+          networkNodes.update({ id: nodeId, color: { background: originalColors[nodeId] } });
+        }, 2000);
+      }
+
+      const card = document.createElement('div');
+      card.className = 'bg-slate-900/80 p-3 rounded border border-red-900/50 shadow-lg relative overflow-hidden group hover:border-red-500 transition-colors mb-2';
+      card.innerHTML = `
+      <div class="absolute left-0 top-0 bottom-0 w-1 bg-red-600 alert-pulse"></div>
+      <div class="flex justify-between items-start mb-1 pl-2">
+        <h3 class="font-bold text-red-400 text-xs uppercase tracking-wide">${incident.title}</h3>
+        <div class="flex gap-1">
+             <span class="text-[9px] bg-red-950 text-red-400 px-1 border border-red-900 rounded">${incident.severity}</span>
+             <span class="text-[9px] bg-emerald-950 text-emerald-400 px-1 border border-emerald-900 rounded">RISK: ${incident.riskScore}</span>
+        </div>
+      </div>
+      <div class="pl-2 mb-2 text-[10px] text-slate-500 font-mono">
+        SRC: ${incident.src} <br>
+        VECTOR: ${incident.type}
+      </div>
+      <button onclick="mitigate(this, '${incident.src}')" class="ml-2 w-full bg-red-900/30 hover:bg-red-900/50 text-red-300 border border-red-800 text-[10px] py-1 rounded flex items-center justify-center gap-1 transition">
+        <i data-lucide="shield-alert" class="w-3 h-3"></i> Deploy Countermeasures
+      </button>
+    `;
+
+      document.getElementById('no-threats-msg').style.display = 'none';
+      const feed = document.getElementById('threat-feed');
+      feed.insertBefore(card, feed.children[1] || feed.firstChild);
+
+      const countEl = document.getElementById('threat-count');
+      countEl.innerText = `${detectedThreats.length} Active`;
+      countEl.className = "ml-auto text-[9px] px-2 py-0.5 rounded bg-red-600 text-white font-bold shadow-[0_0_10px_rgba(220,38,38,0.5)] animate-pulse";
+
+      agenticReasoning(incident);
+      lucide.createIcons();
+      updateCharts();
+    }
+    const ips = [
+      '192.168.1.10', '10.0.0.5', '172.16.0.23', '192.168.1.105',
+      '10.2.4.1', '8.8.8.8', '1.1.1.1', '203.0.113.42', '198.51.100.12'
+    ];
+    const packetTypes = ['TCP', 'UDP', 'HTTP', 'HTTPS', 'SSH', 'FTP', 'DNS', 'ICMP', 'QUIC', 'TLSv1.3'];
+
+    // ... (existing threat definitions) ...
+    const threatDefinitions = [
+      {
+        title: 'EternalBlue SMB', type: 'Exploit', severity: 'CRITICAL', port: 445, color: '#ef4444', cve: 'CVE-2017-0144',
+        rec: 'Apply MS17-010 patch immediately and disable SMBv1.',
+        desc: 'Exploits a vulnerability in Microsoft Server Message Block (SMB) protocol. Allows remote code execution on target systems.'
+      },
+      {
+        title: 'SYN Flood', type: 'DDoS', severity: 'HIGH', port: 80, color: '#f97316', cve: 'N/A',
+        rec: 'Enable SYN cookies and implement rate limiting on edge firewalls.',
+        desc: 'A denial-of-service attack that consumes server resources by initiating a flood of half-open TCP connections.'
+      },
+      {
+        title: 'SQL Injection', type: 'Web Attack', severity: 'HIGH', port: 443, color: '#eab308', cve: 'CWE-89',
+        rec: 'Review input sanitization and enable WAF SQLi rules.',
+        desc: 'Code injection technique used to attack data-driven applications via malicious SQL statements.'
+      },
+      {
+        title: 'FTP Brute Force', type: 'Auth', severity: 'MEDIUM', port: 21, color: '#3b82f6', cve: 'CWE-307',
+        rec: 'Implement Fail2Ban (3 max retries) and switch to SFTP.',
+        desc: 'Automated attempt to gain unauthorized access by systematically guessing username and password combinations.'
+      },
+      {
+        title: 'Cobalt Beacon', type: 'Malware', severity: 'CRITICAL', port: 4444, color: '#a855f7', cve: 'N/A',
+        rec: 'Isolate host, capture memory dump, and re-image immediately.',
+        desc: 'Command and control payload often used by adversaries for post-exploitation lateral movement and data exfiltration.'
+      }
+    ];
+
+    // ... (existing variables) ...
+    let detectedThreats = [];
+    let protocolCounts = {};
+    let ipCounts = {};
+    let packetCount = 0;
+    let threatCounts = { 'Exploit': 0, 'DDoS': 0, 'Web Attack': 0, 'Auth': 0, 'Malware': 0 };
+    let currentPps = 0;
+    let simulationIntervals = [];
+    let isRunning = false;
+    let isReplayMode = false;
+    let uploadedBuffer = [];
+    let currentModel = 'gpt4o';
+    let kvCachePercent = 10;
+    let currentTemp = 0.7;
+
+    // Charts
+    let mainChart, lineChart, radarChart;
+    let networkMapInstance = null;
+    let networkNodes = null;
+    let reportSeverityChart = null;
+    let reportVectorChart = null;
+
+    // --- THEME TOGGLE FUNCTION ---
+    function toggleTheme() {
+      document.body.classList.toggle('light-theme');
+      const btn = document.getElementById('theme-toggle-btn');
+      const isLight = document.body.classList.contains('light-theme');
+
+      if (isLight) {
+        btn.innerHTML = '<i data-lucide="moon" class="w-4 h-4"></i>';
+        btn.classList.remove('text-yellow-400');
+        btn.classList.add('text-slate-600');
+
+        // Update Chart.js defaults for light theme
+        Chart.defaults.color = '#334155';
+        Chart.defaults.borderColor = '#e2e8f0';
+      } else {
+        btn.innerHTML = '<i data-lucide="sun" class="w-4 h-4"></i>';
+        btn.classList.remove('text-slate-600');
+        btn.classList.add('text-yellow-400');
+
+        // Reset Chart.js defaults for dark theme
+        Chart.defaults.color = '#64748b';
+        Chart.defaults.borderColor = 'rgba(255,255,255,0.1)';
+      }
+
+      // Re-render icons and update charts to apply color changes
+      lucide.createIcons();
+      if (mainChart) mainChart.update();
+      if (lineChart) lineChart.update();
+      if (radarChart) radarChart.update();
+    }
+
+    // ... (existing functions: enterDashboard, createAttentionGrid, initCharts, etc.) ...
+    function enterDashboard() {
+      const landing = document.getElementById('landing-page');
+      const dashboard = document.getElementById('dashboard-view');
+      landing.classList.add('opacity-0');
+
+      setTimeout(() => {
+        landing.classList.add('hidden');
+        dashboard.classList.remove('hidden');
+        void dashboard.offsetWidth; // Trigger reflow
+        dashboard.classList.remove('opacity-0');
+
+        initCharts();
+        initNetworkMap();
+        createAttentionGrid();
+
+        // Start metrics update only
+        simulationIntervals.push(setInterval(updateLineChart, 1000));
+        simulationIntervals.push(setInterval(updateMetrics, 2000));
+
+        isRunning = true;
+        updateStreamStatus('LIVE');
+      }, 500);
+    }
+
+    function createAttentionGrid() {
+      const grid = document.getElementById('attention-grid');
+      grid.innerHTML = '';
+      for (let i = 0; i < 64; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'attn-cell bg-slate-800';
+        grid.appendChild(cell);
+      }
+    }
+
+    function initCharts() {
+      const ctxPie = document.getElementById('threatPieChart').getContext('2d');
+      mainChart = new Chart(ctxPie, {
+        type: 'doughnut',
+        data: {
+          labels: ['Exploit', 'DDoS', 'Web Attack', 'Auth', 'Malware'],
+          datasets: [{
+            data: [0, 0, 0, 0, 0],
+            backgroundColor: ['#ef4444', '#f97316', '#eab308', '#3b82f6', '#a855f7'],
+            borderColor: 'rgba(255,255,255,0.1)',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 9 }, color: '#64748b' } }
+          },
+          cutout: '70%'
+        }
+      });
+
+      const ctxLine = document.getElementById('trafficLineChart').getContext('2d');
+      lineChart = new Chart(ctxLine, {
+        type: 'line',
+        data: {
+          labels: Array(20).fill(''),
+          datasets: [{
+            label: 'Packets/sec',
+            data: Array(20).fill(0),
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            fill: true,
+            tension: 0.4,
+            pointRadius: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { display: false } },
+            x: { grid: { display: false }, ticks: { display: false } }
+          }
+        }
+      });
+    }
+
+    function updateCharts() {
+      if (mainChart) {
+        mainChart.data.datasets[0].data = [
+          threatCounts['Exploit'] || 0,
+          threatCounts['DDoS'] || 0,
+          threatCounts['Web Attack'] || 0,
+          threatCounts['Auth'] || 0,
+          threatCounts['Malware'] || 0
+        ];
+        mainChart.update('none');
+      }
+    }
+
+    function updateLineChart() {
+      if (lineChart && isRunning) {
+        lineChart.data.datasets[0].data.push(currentPps);
+        lineChart.data.datasets[0].data.shift();
+        lineChart.update('none');
+      }
+    }
+
+    function injectLiveLog(log) {
+      if (!isRunning) return;
+      packetCount++;
+
+      const proto = log.service?.toUpperCase() || log.protocol?.toUpperCase() || 'TCP';
+      const src = log.src_ip || '0.0.0.0';
+      const dst = log.dst_ip || '0.0.0.0';
+      const size = log.orig_bytes || Math.floor(Math.random() * 500);
+
+      protocolCounts[proto] = (protocolCounts[proto] || 0) + 1;
+      ipCounts[src] = (ipCounts[src] || 0) + 1;
+
+      // UI Update
+      const row = document.createElement('div');
+      row.className = 'flex gap-2 hover:bg-slate-800 cursor-pointer p-0.5 px-2 transition border-b border-transparent hover:border-slate-700';
+
+      let colorClass = 'text-slate-500';
+      if (proto === 'TCP') colorClass = 'text-blue-500';
+      if (['HTTPS', 'SSL'].includes(proto)) colorClass = 'text-emerald-500';
+      if (['DNS'].includes(proto)) colorClass = 'text-purple-400';
+
+      row.innerHTML = `
+        <span class="${colorClass} w-10 font-bold text-[9px]">${proto}</span>
+        <span class="text-slate-400 w-24 text-[9px] font-mono">${src}</span>
+        <span class="text-slate-600 w-4 text-center text-[9px]">»</span>
+        <span class="text-slate-400 w-24 text-[9px] font-mono">${dst}</span>
+        <span class="text-slate-600 text-[9px] ml-auto">${size}b</span>
+      `;
+
+      const streamEl = document.getElementById('packet-stream');
+      if (streamEl) {
+        streamEl.insertBefore(row, streamEl.firstChild);
+        if (streamEl.children.length > 30) streamEl.removeChild(streamEl.lastChild);
+      }
+
+      // Pulse network map
+      if (networkNodes) {
+        const nodeId = (Math.abs(src.split('.').reduce((a, b) => a + (parseInt(b) || 0), 0)) % 6) + 1;
+        const originalColors = { 1: '#3b82f6', 2: '#64748b', 3: '#10b981', 4: '#10b981', 5: '#a855f7', 6: '#f59e0b' };
+        try {
+          networkNodes.update({ id: nodeId, color: { background: '#ffffff' } });
+          setTimeout(() => {
+            networkNodes.update({ id: nodeId, color: { background: originalColors[nodeId] } });
+          }, 150);
+        } catch (e) { }
+      }
+
+      // PPS Update
+      currentPps++;
+      document.getElementById('pps-counter').innerText = currentPps + "/sec";
+      setTimeout(() => {
+        currentPps = Math.max(0, currentPps - 1);
+        document.getElementById('pps-counter').innerText = currentPps + "/sec";
+      }, 1000);
+    }
+    window.injectLiveLog = injectLiveLog;
+    window.injectLiveLog = injectLiveLog;
+
+    function triggerThreat(src) {
+      const def = threatDefinitions[Math.floor(Math.random() * threatDefinitions.length)];
+      const incident = { id: Date.now(), src, ...def, timestamp: new Date().toLocaleTimeString() };
+      detectedThreats.push(incident);
+      threatCounts[def.type] = (threatCounts[def.type] || 0) + 1;
+      updateCharts();
+
+      const threatLevel = document.getElementById('global-threat-level');
+      threatLevel.innerText = "CRITICAL";
+      threatLevel.className = "text-xs font-bold text-red-500 animate-pulse";
+
+      const portEl = document.querySelector(`.port-status[data-port="${def.port}"]`);
+      if (portEl) {
+        portEl.innerText = "ATTACK";
+        portEl.className = "text-xs font-bold text-red-500 animate-pulse port-status";
+      }
+
+      // Flash node red on map
+      if (networkNodes) {
+        const nodeId = Math.floor(Math.random() * 6) + 1;
+        const originalColors = { 1: '#3b82f6', 2: '#64748b', 3: '#10b981', 4: '#10b981', 5: '#a855f7', 6: '#f59e0b' };
+        networkNodes.update({ id: nodeId, color: { background: '#ef4444' } });
+        setTimeout(() => {
+          networkNodes.update({ id: nodeId, color: { background: originalColors[nodeId] } });
+        }, 2000);
+      }
+
+      const card = document.createElement('div');
+      card.className = 'bg-slate-900/80 p-3 rounded border border-red-900/50 shadow-lg relative overflow-hidden group hover:border-red-500 transition-colors mb-2';
+      card.innerHTML = `
+      <div class="absolute left-0 top-0 bottom-0 w-1 bg-red-600 alert-pulse"></div>
+      <div class="flex justify-between items-start mb-1 pl-2">
+        <h3 class="font-bold text-red-400 text-xs uppercase tracking-wide">${def.title}</h3>
+        <span class="text-[9px] bg-red-950 text-red-400 px-1 border border-red-900 rounded">${def.severity}</span>
+      </div>
+      <div class="pl-2 mb-2 text-[10px] text-slate-500 font-mono">
+        SRC: ${src} <br>
+        VECTOR: ${def.type}
+      </div>
+      <button onclick="mitigate(this, '${src}')" class="ml-2 w-full bg-red-900/30 hover:bg-red-900/50 text-red-300 border border-red-800 text-[10px] py-1 rounded flex items-center justify-center gap-1 transition">
+        <i data-lucide="shield-alert" class="w-3 h-3"></i> Deploy Countermeasures
+      </button>
+    `;
+
+      document.getElementById('no-threats-msg').style.display = 'none';
+      const feed = document.getElementById('threat-feed');
+      feed.insertBefore(card, feed.children[1] || feed.firstChild); // Insert after header or top
+
+      const countEl = document.getElementById('threat-count');
+      countEl.innerText = `${detectedThreats.length} Active`;
+      countEl.className = "ml-auto text-[9px] px-2 py-0.5 rounded bg-red-600 text-white font-bold shadow-[0_0_10px_rgba(220,38,38,0.5)] animate-pulse";
+
+      agenticReasoning(def);
+      lucide.createIcons();
+    }
+
+    async function mitigate(btn, ip) {
+      btn.innerHTML = `<i data-lucide="loader-2" class="w-3 h-3 animate-spin"></i> Processing`;
+      btn.disabled = true;
+      await typeWriter(`USER COMMAND: Mitigate threat from ${ip}.`, 'text-emerald-400');
+      await new Promise(r => setTimeout(r, 1000));
+      await typeWriter(`ACTION: Firewall rule added. IP ${ip} blocklisted.`, 'text-emerald-300');
+
+      btn.className = "ml-2 w-full bg-emerald-900/30 text-emerald-300 border border-emerald-800 text-[10px] py-1 rounded flex items-center justify-center gap-1 cursor-default";
+      btn.innerHTML = `<i data-lucide="check" class="w-3 h-3"></i> Neutralized`;
+      lucide.createIcons();
+
+      // Reset status after a while if no more threats
+      setTimeout(() => {
+        const activeThreats = detectedThreats.length; // Simplified logic
+        if (Math.random() > 0.5) {
+          document.getElementById('global-threat-level').innerText = "LOW";
+          document.getElementById('global-threat-level').className = "text-xs font-bold text-emerald-500";
+        }
+      }, 5000);
+    }
+
+    function switchAgentTab(tab) {
+      document.getElementById('agent-console').classList.toggle('hidden', tab !== 'console');
+      document.getElementById('agent-metrics').classList.toggle('hidden', tab !== 'metrics');
+
+      const tabConsole = document.getElementById('tab-console');
+      const tabMetrics = document.getElementById('tab-metrics');
+
+      if (tab === 'console') {
+        tabConsole.classList.add('tab-active');
+        tabConsole.classList.remove('tab-inactive');
+        tabMetrics.classList.add('tab-inactive');
+        tabMetrics.classList.remove('tab-active');
+      } else {
+        tabMetrics.classList.add('tab-active');
+        tabMetrics.classList.remove('tab-inactive');
+        tabConsole.classList.add('tab-inactive');
+        tabConsole.classList.remove('tab-active');
+      }
+    }
+
+    let currentConsoleLine = null;
+
+    async function typeWriter(text, className = 'text-emerald-400') {
+      const consoleEl = document.getElementById('agent-console');
+      if (!consoleEl) return;
+
+      // Handle Step messages (start with uppercase or explicit indicators)
+      const isStep = text.includes("Agent:") || text.includes("Pipeline") || text.includes("Receiving") || text.includes("Consulting") || text.includes("Correlating");
+
+      if (isStep) {
+        const div = document.createElement('div');
+        div.className = `${className} mb-1 opacity-80`;
+        div.textContent = "> " + text;
+        consoleEl.appendChild(div);
+        currentConsoleLine = null; // Reset current line to force new break
+      } else {
+        // Token streaming logic
+        if (!currentConsoleLine) {
+          currentConsoleLine = document.createElement('div');
+          currentConsoleLine.className = `${className} mb-1`;
+          currentConsoleLine.textContent = "> ";
+          consoleEl.appendChild(currentConsoleLine);
+        }
+        currentConsoleLine.textContent += text;
+      }
+
+      consoleEl.scrollTop = consoleEl.scrollHeight;
+      if (consoleEl.children.length > 100) consoleEl.removeChild(consoleEl.firstChild);
+    }
+    window.typeWriter = typeWriter;
+
+    async function agenticReasoning(threat) {
+      await typeWriter(`ALERT: Anomalous packet structure detected on Port ${threat.port}. [ID:${threat.id}]`, 'text-red-400');
+      await typeWriter(`Retrieving context from Vector Database for signature match...`, 'text-blue-300');
+      await typeWriter(`ANALYSIS: Payload matches known ${threat.title} signatures. Confidence: 98.2%.`, 'text-slate-200');
+      await typeWriter(`RECOMMENDATION: Immediate isolation of ${threat.src}. Awaiting user confirmation.`, 'text-orange-300');
+      updateCOTLog("Hypothesis: Malicious Payload");
+      updateCOTLog("Checking CVE Database...");
+    }
+
+    function updateCOTLog(msg) {
+      const log = document.getElementById('cot-log');
+      const div = document.createElement('div');
+      div.className = "relative pl-2";
+      div.innerHTML = `<span class="absolute -left-3.5 top-1.5 w-1.5 h-1.5 bg-slate-600 rounded-full"></span>${msg}`;
+      log.appendChild(div);
+      log.scrollTop = log.scrollHeight;
+      if (log.children.length > 8) log.removeChild(log.firstChild);
+    }
+
+    function changeModel(model) {
+      currentModel = model;
+      const modelNames = {
+        'llama3': 'Llama-3-70B-Instruct',
+        'gpt4o': 'GPT-4o-2024-05-13',
+        'claude35': 'Claude-3.5-Sonnet',
+        'gemini15': 'Gemini-1.5-Pro-Latest'
+      };
+      updateCOTLog(`System: Offloading context to ${modelNames[model] || model}...`);
+      kvCachePercent = 10;
+      document.getElementById('metric-kv').innerText = "10%";
+    }
+
+    function updateTemp(val) {
+      currentTemp = val / 100;
+      document.getElementById('temp-val').innerText = currentTemp.toFixed(2);
+      document.getElementById('metric-ppl').innerText = (1 + currentTemp * 0.2).toFixed(2);
+    }
+
+    function triggerAPI(action) {
+      const btn = document.getElementById(`btn-${action}`);
+      const originalContent = btn.innerHTML;
+      btn.innerHTML = `<i data-lucide="loader-2" class="w-2.5 h-2.5 animate-spin"></i>`;
+      setTimeout(() => {
+        btn.innerHTML = originalContent;
+        lucide.createIcons();
+        if (action === 'flush') {
+          kvCachePercent = 0;
+          document.getElementById('metric-kv').innerText = "0%";
+          updateCOTLog("API: Cache flushed successfully.");
+        }
+        if (action === 'sync') {
+          updateCOTLog("API: RAG Database synced with latest ThreatIntel.");
+        }
+      }, 800);
+    }
+
+    function updateMetrics() {
+      let baseTps = 450;
+      if (currentModel === 'llama3') baseTps = 820;
+      if (currentModel === 'gpt4o') baseTps = 580;
+      if (currentModel === 'claude35') baseTps = 540;
+      if (currentModel === 'gemini15') baseTps = 950;
+      document.getElementById('metric-tps').innerText = Math.floor(Math.random() * 50 + baseTps);
+
+      const jitter = (Math.random() * 0.05) - 0.025;
+      document.getElementById('metric-ppl').innerText = (1 + currentTemp * 0.2 + jitter).toFixed(2);
+
+      if (kvCachePercent < 90) kvCachePercent++;
+      document.getElementById('metric-kv').innerText = kvCachePercent + "%";
+
+      // Attention flicker
+      document.querySelectorAll('.attn-cell').forEach(c => {
+        if (Math.random() > 0.8) {
+          c.style.backgroundColor = Math.random() > 0.5 ? '#a855f7' : '#3b82f6';
+          c.style.boxShadow = `0 0 4px ${c.style.backgroundColor}`;
+        } else {
+          c.style.backgroundColor = '#1e293b';
+          c.style.boxShadow = 'none';
+        }
+      });
+
+      if (Math.random() > 0.75) {
+        const steps = [
+          "Layer 12: Attention Head 4 active",
+          "Parsing protocol headers...",
+          "Comparing against T1059.001",
+          "Vector DB: Nearest Neighbor found (d=0.04)",
+          "Sanitizing input tokens...",
+          "Re-evaluating confidence score..."
+        ];
+        updateCOTLog(steps[Math.floor(Math.random() * steps.length)]);
+      }
+    }
+
+    function generateReport() {
+      document.getElementById('report-modal').classList.remove('hidden');
+      document.getElementById('report-date').innerText = new Date().toLocaleString();
+      document.getElementById('report-total-threats').innerText = detectedThreats.length;
+
+      const minutes = Math.floor(packetCount / 60);
+      const seconds = packetCount % 60;
+      document.getElementById('report-duration').innerText = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
+      // --- Generate Report Visualizations ---
+
+      // Destroy existing chart instances if they exist
+      if (reportSeverityChart) reportSeverityChart.destroy();
+      if (reportVectorChart) reportVectorChart.destroy();
+
+      // Data prep for Severity Chart
+      const severityCounts = { 'CRITICAL': 0, 'HIGH': 0, 'MEDIUM': 0, 'LOW': 0 };
+      detectedThreats.forEach(t => { if (severityCounts[t.severity] !== undefined) severityCounts[t.severity]++; });
+
+      const ctxSeverity = document.getElementById('reportSeverityChart').getContext('2d');
+      reportSeverityChart = new Chart(ctxSeverity, {
+        type: 'bar',
+        data: {
+          labels: Object.keys(severityCounts),
+          datasets: [{
+            label: 'Incidents by Severity',
+            data: Object.values(severityCounts),
+            backgroundColor: ['#ef4444', '#f97316', '#eab308', '#3b82f6'],
+            borderRadius: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: false, // Disable animation for PDF export stability
+          plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+        }
+      });
+
+      // Data prep for Vector Chart
+      const vectorCounts = {};
+      detectedThreats.forEach(t => { vectorCounts[t.type] = (vectorCounts[t.type] || 0) + 1; });
+
+      const ctxVector = document.getElementById('reportVectorChart').getContext('2d');
+      reportVectorChart = new Chart(ctxVector, {
+        type: 'doughnut',
+        data: {
+          labels: Object.keys(vectorCounts),
+          datasets: [{
+            data: Object.values(vectorCounts),
+            backgroundColor: ['#ef4444', '#3b82f6', '#f59e0b', '#10b981', '#8b5cf6'],
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: false,
+          plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { size: 10 } } } }
+        }
+      });
+
+      // --- Generate Detailed Cards ---
+      const logContainer = document.getElementById('report-detailed-log');
+      logContainer.innerHTML = '';
+
+      if (detectedThreats.length === 0) {
+        logContainer.innerHTML = '<div class="p-8 text-center text-slate-400 italic bg-slate-50 border border-slate-100 rounded">No incidents recorded in this session.</div>';
+      } else {
+        detectedThreats.forEach(t => {
+          const card = document.createElement('div');
+          card.className = `p-4 rounded shadow-sm bg-white report-card ${t.severity}`;
+          card.innerHTML = `
+                <div class="flex justify-between items-start mb-3">
+                    <div class="flex items-center gap-2">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold text-white bg-slate-800">${t.severity}</span>
+                        <h3 class="font-bold text-slate-800">${t.title}</h3>
+                    </div>
+                    <span class="text-xs font-mono text-slate-500">${t.timestamp}</span>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4 text-xs text-slate-600 mb-3 font-mono bg-slate-50/50 p-2 rounded">
+                    <div><span class="font-bold text-slate-400">SRC:</span> ${t.src}</div>
+                    <div><span class="font-bold text-slate-400">DST PORT:</span> ${t.port}</div>
+                    <div><span class="font-bold text-slate-400">VECTOR:</span> ${t.type}</div>
+                    <div><span class="font-bold text-slate-400">CVE:</span> ${t.cve || 'N/A'}</div>
+                </div>
+
+                <div class="space-y-2">
+                    <div>
+                        <h4 class="text-[10px] uppercase font-bold text-slate-400">Analysis</h4>
+                        <p class="text-xs text-slate-700 leading-snug">${t.desc}</p>
+                    </div>
+                    <div>
+                        <h4 class="text-[10px] uppercase font-bold text-slate-400">Action Taken</h4>
+                        <div class="flex items-center gap-2 text-emerald-600 font-bold text-xs">
+                            <i data-lucide="check-circle" class="w-3 h-3"></i>
+                            <span>${t.rec}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+          logContainer.appendChild(card);
+        });
+        // Re-init icons for new content
+        lucide.createIcons();
+      }
+    }
+
+    function closeReport() {
+      document.getElementById('report-modal').classList.add('hidden');
+      if (reportSeverityChart) { reportSeverityChart.destroy(); reportSeverityChart = null; }
+      if (reportVectorChart) { reportVectorChart.destroy(); reportVectorChart = null; }
+    }
+
+    function exportPDF() {
+      // We export ONLY the inner content div, not the whole modal
+      const element = document.getElementById('report-content');
+      const opt = {
+        margin: 10,
+        filename: `SkANDA_Report_${Date.now()}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+      html2pdf().set(opt).from(element).save();
+    }
+
+    function initNetworkMap() {
+      // Target the new container ID in the left column
+      const container = document.getElementById('left-network-map');
+      if (!container) return;
+
+      // Use existing global networkNodes if defined, else create new
+      if (!networkNodes) {
+        networkNodes = new vis.DataSet([
+          { id: 1, label: 'Firewall', color: { background: '#3b82f6' }, shape: 'diamond' },
+          { id: 2, label: 'Core Switch', color: { background: '#64748b' }, shape: 'dot' },
+          { id: 3, label: 'Web Svr', color: { background: '#10b981' } },
+          { id: 4, label: 'DB Svr', color: { background: '#10b981' } },
+          { id: 5, label: 'Admin PC', color: { background: '#a855f7' } },
+          { id: 6, label: 'Guest WiFi', color: { background: '#f59e0b' } }
+        ]);
+      }
+
+      const edges = new vis.DataSet([
+        { from: 1, to: 2 },
+        { from: 2, to: 3 },
+        { from: 2, to: 4 },
+        { from: 2, to: 5 },
+        { from: 1, to: 6 }
+      ]);
+
+      const options = {
+        nodes: {
+          font: { color: '#94a3b8', face: 'JetBrains Mono', size: 10 },
+          borderWidth: 0,
+          shadow: true
+        },
+        edges: { color: { color: '#334155' }, width: 1 },
+        physics: { stabilization: true },
+        interaction: { zoomView: false }
+      };
+
+      networkMapInstance = new vis.Network(container, { nodes: networkNodes, edges }, options);
+      networkMapInstance.once('stabilized', () => {
+        networkMapInstance.fit();
+      });
+    }
+
+    function toggleNetworkMap() {
+      initNetworkMap();
+    }
+
+    function randomIP() { return ips[Math.floor(Math.random() * ips.length)]; }
+    function randomType() { return packetTypes[Math.floor(Math.random() * packetTypes.length)]; }
+
+    function updateStreamStatus(status) {
+      const el = document.getElementById('stream-status');
+      if (status === 'REPLAY') {
+        el.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse"></span><span class="text-[10px] text-orange-400">REPLAY</span>';
+      } else if (status === 'LIVE') {
+        el.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span><span class="text-[10px] text-blue-400">LIVE</span>';
+      } else {
+        el.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-red-500"></span><span class="text-[10px] text-red-400">PAUSED</span>';
+      }
+    }
+
+    function handleLandingUpload(input) { processUpload(input, true); }
+    function handleFileUpload(input) { processUpload(input, false); }
+
+    function processUpload(input, isLanding) {
+      const file = input.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        try {
+          let data = JSON.parse(e.target.result);
+          if (Array.isArray(data)) {
+            // Adaptive Wireshark/Zeek Mapping
+            uploadedBuffer = data.map(item => {
+              if (item._source && item._source.layers) {
+                const l = item._source.layers;
+                return {
+                  protocol: l.ip?.['ip.proto'] || l.frame?.['frame.protocols']?.split(':').pop() || 'TCP',
+                  src_ip: l.ip?.['ip.src'] || '0.0.0.0',
+                  dst_ip: l.ip?.['ip.dst'] || '0.0.0.0',
+                  orig_bytes: parseInt(l.frame?.['frame.len']) || 0
+                };
+              }
+              return item;
+            });
+
+            isReplayMode = true;
+            if (isLanding) {
+              enterDashboard();
+              setTimeout(() => startReplayLoop(), 1000);
+              updateCOTLog(`SYSTEM: Loaded capture file from landing.`);
+            } else {
+              startReplayLoop();
+              updateCOTLog("SYSTEM: Capture file loaded. Starting packet replay...");
+            }
+          }
+        } catch (err) {
+          // Fallback simulation
+          uploadedBuffer = Array.from({ length: 50 }, () => ({
+            protocol: randomType(),
+            src_ip: randomIP(),
+            dst_ip: randomIP(),
+            orig_bytes: Math.floor(Math.random() * 2000)
+          }));
+          isReplayMode = true;
+          if (isLanding) {
+            enterDashboard();
+            setTimeout(() => startReplayLoop(), 1000);
+          } else {
+            startReplayLoop();
+          }
+        }
+      };
+      reader.readAsText(file);
+      input.value = '';
+    }
+
+    let replayIndex = 0;
+    function startReplayLoop() {
+      updateStreamStatus('REPLAY');
+      // Clear existing intervals to prevent overlap
+      simulationIntervals.forEach(clearInterval);
+      simulationIntervals = [];
+
+      // Re-add standard metric updates
+      simulationIntervals.push(setInterval(updateLineChart, 1000));
+      simulationIntervals.push(setInterval(updateMetrics, 2000));
+
+      const interval = setInterval(() => {
+        if (!isRunning) return;
+        if (replayIndex < uploadedBuffer.length) {
+          injectLiveLog(uploadedBuffer[replayIndex]);
+          replayIndex++;
+        } else {
+          replayIndex = 0; // Loop replay
+        }
+      }, 200); // 5 packets/sec replay speed
+
+      simulationIntervals.push(interval);
+    }
+
+    function filterThreats() {
+      const query = document.getElementById('threat-search').value.toLowerCase();
+      const severityFilter = document.getElementById('severity-filter').value;
+      const threatCards = document.querySelectorAll('#threat-feed > div.relative'); // Select threat cards specifically
+
+      threatCards.forEach(card => {
+        if (card.id === 'no-threats-msg') return;
+        const text = card.innerText.toLowerCase();
+        const severity = card.querySelector('span.bg-red-950')?.innerText || '';
+        const matchQuery = text.includes(query);
+        const matchSeverity = severityFilter === '' || severity === severityFilter;
+        card.style.display = (matchQuery && matchSeverity) ? '' : 'none';
+      });
+    }
+
+    function clearThreatSearch() {
+      document.getElementById('threat-search').value = '';
+      document.getElementById('severity-filter').value = '';
+      filterThreats();
+    }
+
+    function exportThreatsCSV() {
+      if (detectedThreats.length === 0) { alert('No threats to export.'); return; }
+      const csvContent = [
+        ['ID', 'Title', 'Type', 'Severity', 'Port', 'CVE', 'Source']
+        , ...detectedThreats.map(t => [t.id, t.title, t.type, t.severity, t.port, t.cve, t.src])
+      ].map(e => e.join(",")).join("\n");
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'threats.csv'; a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // Auto-refresh simulation for thread feed (Simulated)
+    setInterval(() => {
+      // Very low chance of random background threat if not manually triggered
+      if (isRunning && Math.random() > 0.995) {
+        triggerThreat(randomIP());
+      }
+    }, 2000);
+
+  </script>
+  <script type="module">
+    import { initDashboard } from "./js/dashboard.js";
+    initDashboard();
+  </script>
+</body>
+
+</html>

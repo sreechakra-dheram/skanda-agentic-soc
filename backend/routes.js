@@ -1,19 +1,19 @@
 import express from "express";
-import { analyzeLog, getThreats } from "./controllers/analysisController.js";
-import { generateIncidentReport } from "./services/reportGenerator.js";
-import { approveMitigation } from "./services/mitigationAgent.js";
+import { DataPipeline } from "./DataPipeline.js";
+import { MitigationAgent } from "./SOCAgent.js";
+import { ThreatRadar } from "./ThreatRadar.js";
 
 const router = express.Router();
 
-router.post("/analyze", analyzeLog);
+router.post("/analyze", DataPipeline.analyze);
+router.get("/threats", DataPipeline.getHistory);
 
 router.get("/report", (req, res) => {
-    const report = generateIncidentReport(getThreats());
-    res.json(report);
+    res.json(ThreatRadar.generateReport([]));
 });
 
 router.post("/approve", async (req, res) => {
-    const result = await approveMitigation(req.body);
+    const result = await MitigationAgent.approve(req.body);
     res.json(result);
 });
 

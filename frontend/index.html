@@ -1663,11 +1663,54 @@
       }
     }, 2000);
 
+    // --- CONSOLIDATED FRONTEND LOGIC ---
+    const API_BASE = "http://localhost:5000/api";
+    let socket;
+
+    function initSocket(onThreat, onReasoning, onMitigation, onRawLog) {
+      socket = new WebSocket("ws://127.0.0.1:5000");
+      socket.onmessage = event => {
+        const data = JSON.parse(event.data);
+        if (data.type === "THREAT_DETECTED") onThreat(data.payload);
+        if (data.type === "AI_REASONING") onReasoning(data.payload);
+        if (data.type === "MITIGATION_STATUS") onMitigation(data.payload);
+        if (data.type === "NEW_LOG") onRawLog(data.payload);
+      };
+    }
+
+    function handleThreat(aiThreat) {
+      const adapted = {
+        id: aiThreat.id,
+        src: aiThreat.src_ip || "AI-DETECTED",
+        title: aiThreat.title,
+        type: "AI Threat",
+        severity: aiThreat.severity,
+        riskScore: aiThreat.riskScore || 0,
+        port: 0,
+        desc: aiThreat.reason,
+        rec: aiThreat.mitigation,
+        timestamp: aiThreat.timestamp
+      };
+      window.triggerThreatFromAI?.(adapted);
+    }
+
+    function handleReasoning(message) {
+      window.typeWriter?.(message, "text-blue-300");
+    }
+
+    function handleMitigation(result) {
+      window.typeWriter?.(`AGENT ACTION: ${result.status}`, "text-emerald-400");
+      if (result.status === "MITIGATED") window.typeWriter?.(`IP ${result.ip} successfully blocked.`, "text-emerald-300");
+      if (result.status === "PENDING_APPROVAL") window.typeWriter?.("Awaiting analyst approval...", "text-yellow-300");
+    }
+
+    function handleRawLog(log) {
+      window.injectLiveLog?.(log);
+    }
+
+    initSocket(handleThreat, handleReasoning, handleMitigation, handleRawLog);
   </script>
-  <script type="module">
-    import { initDashboard } from "./js/dashboard.js";
-    initDashboard();
-  </script>
+
 </body>
 
 </html>

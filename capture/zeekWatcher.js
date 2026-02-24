@@ -2,7 +2,7 @@ import chokidar from "chokidar";
 import fs from "fs";
 import axios from "axios";
 import { ZEEK_LOG } from "./config.js";
-import { parseZeekLine } from "../backend/parsers/zeekParser.js";
+import { parseZeekLine } from "../backend/DataPipeline.js";
 import { logInfo, logError } from "../shared/logger.js";
 import dotenv from "dotenv";
 

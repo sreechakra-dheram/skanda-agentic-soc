@@ -36,6 +36,11 @@ function captureTraffic() {
             if (match) {
                 const [_, proto, src_ip, src_port, dest_ip, dest_port] = match;
 
+                // Filter out localhost traffic
+                if (src_ip === "127.0.0.1" || dest_ip === "127.0.0.1" || src_ip === "::1" || dest_ip === "::1") {
+                    return;
+                }
+
                 // Format: ts	uid	id.orig_h	id.orig_p	id.resp_h	id.resp_p	proto	service	duration	orig_bytes	resp_bytes	conn_state	local_orig	local_resp	missed_bytes	history	orig_pkts	orig_ip_bytes	resp_pkts	resp_ip_bytes	tunnel_parents
                 // We only need the core fields for the parser
                 const ts = (Date.now() / 1000).toFixed(6);

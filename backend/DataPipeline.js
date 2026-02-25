@@ -4,7 +4,7 @@ import { broadcast, broadcastReasoning } from "./websocket.js";
 import { saveThreat, getThreatsDB } from "./Database.js";
 
 let packetCounter = 0;
-const SAMPLING_RATE = 1;
+const SAMPLING_RATE = 100;
 
 export function parseZeekLine(line) {
     if (!line || line.startsWith("#")) return null;
@@ -28,6 +28,12 @@ export const DataPipeline = {
     async analyze(req, res) {
         try {
             const rawLog = req.body;
+
+            // --- FILTER LOCALHOST NOISE ---
+            if (rawLog.src_ip === "127.0.0.1" || rawLog.dst_ip === "127.0.0.1" || rawLog.src_ip === "::1" || rawLog.dst_ip === "::1") {
+                return res.json({ status: "filtered_localhost" });
+            }
+
             packetCounter++;
 
             if (packetCounter % SAMPLING_RATE !== 0) {

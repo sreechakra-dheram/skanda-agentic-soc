@@ -38,6 +38,11 @@ chokidar.watch(ZEEK_LOG).on("change", async () => {
             const parsed = parseZeekLine(line);
             if (!parsed) continue;
 
+            // Filter out localhost noise
+            if (parsed.src_ip === "127.0.0.1" || parsed.dst_ip === "127.0.0.1" || parsed.src_ip === "::1" || parsed.dst_ip === "::1") {
+                continue;
+            }
+
             try {
                 await axios.post(
                     "http://127.0.0.1:5000/api/analyze",

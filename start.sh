@@ -5,7 +5,7 @@ echo "Starting SkANDA Prime SOC..."
 # start backend
 npm run dev &
 
-# start zeek watcher
-node capture/zeekWatcher.js &
+# start capture bridge + watcher
+node capture/capture.js &
 
 echo "System Ready."

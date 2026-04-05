@@ -1,1 +1,0 @@
-export const ZEEK_LOG = "./capture/zeek_logs/conn.log";

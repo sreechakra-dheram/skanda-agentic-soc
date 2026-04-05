@@ -1,22 +1,34 @@
-import axios from "axios";
 import dotenv from "dotenv";
 import fs from "fs";
 import path from "path";
 import { exec } from "child_process";
 import os from "os";
 import { broadcastReasoning } from "./websocket.js";
+import { getProvider } from "./AIProvider.js";
 
 dotenv.config();
 
+// --- DATABASE ---
+const DB_PATH = path.resolve("storage/threats.json");
 const MEMORY_PATH = path.resolve("storage/memory.json");
-const MODELS_TO_TRY = [
-    process.env.GEMINI_MODEL,
-    "gemini-1.5-flash",
-    "gemini-2.0-flash",
-    "gemini-pro"
-].filter(Boolean);
 
-// --- MEMORY LOGIC ---
+if (!fs.existsSync("storage")) fs.mkdirSync("storage");
+if (!fs.existsSync(DB_PATH)) fs.writeFileSync(DB_PATH, JSON.stringify([]));
+
+export function saveThreat(threat) {
+    try {
+        const threats = JSON.parse(fs.readFileSync(DB_PATH, "utf-8"));
+        threats.push(threat);
+        fs.writeFileSync(DB_PATH, JSON.stringify(threats, null, 2));
+    } catch (err) { console.error("DB Save Error:", err); }
+}
+
+export function getThreatsDB() {
+    try { return JSON.parse(fs.readFileSync(DB_PATH, "utf-8")); }
+    catch (err) { return []; }
+}
+
+// --- MEMORY ---
 export const MemoryAgent = {
     _load() {
         try {
@@ -49,25 +61,45 @@ export const MemoryAgent = {
     }
 };
 
-// --- AI ANALYZER ---
-async function analyzeWithGemini(log, memoryContext = "") {
-    const prompt = `Analyze this network log within this context: ${memoryContext}. Return FINAL JSON ONLY: { "attack": "Name", "severity": "CRITICAL|HIGH|MEDIUM|LOW|INFO", "reason": "Reason", "mitigation": "Action" }. LOG: ${JSON.stringify(log)}`;
-    const API_KEY = process.env.GEMINI_API_KEY;
-    const PROJECT_ID = process.env.GCP_PROJECT_ID;
-
-    for (const modelId of MODELS_TO_TRY) {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${API_KEY}`;
-        const headers = { 'Content-Type': 'application/json' };
-        if (PROJECT_ID) headers['x-goog-user-project'] = PROJECT_ID;
-
-        try {
-            const response = await axios.post(url, { contents: [{ parts: [{ text: prompt }] }] }, { timeout: 10000, headers });
-            const text = response.data.candidates[0].content.parts[0].text;
-            const jsonMatch = text.match(/\{[\s\S]*\}/);
-            if (jsonMatch) return JSON.parse(jsonMatch[0]);
-        } catch (err) { continue; }
+// --- THREAT RADAR ---
+export const ThreatRadar = {
+    createThreat(aiResult) {
+        return {
+            id: `TR-${Date.now()}`,
+            title: aiResult.attack || "Anomalous Traffic",
+            severity: aiResult.severity || "INFO",
+            reason: aiResult.reason || "Packet inspection triggered alert.",
+            mitigation: aiResult.mitigation || "Monitor IP activity.",
+            timestamp: new Date().toISOString(),
+            riskScore: 0
+        };
+    },
+    calculateRisk(threat, history) {
+        const severityMap = { CRITICAL: 50, HIGH: 35, MEDIUM: 20, LOW: 10, INFO: 5 };
+        let score = (severityMap[threat.severity] || 5);
+        if (history) {
+            score += Math.min(history.count * 5, 30);
+            score += Math.min(history.behaviors.length * 10, 20);
+        }
+        return Math.min(score, 100);
+    },
+    generateReport(threats) {
+        const stats = { CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0, INFO: 0 };
+        threats.forEach(t => stats[t.severity]++);
+        return {
+            generatedAt: new Date().toISOString(),
+            totalIncidents: threats.length,
+            severityMetrics: stats,
+            summary: "Automated SOC Intelligence Report",
+            detailedIncidents: threats
+        };
     }
-    return { attack: "Unknown", severity: "INFO", reason: "AI Analysis failure", mitigation: "Manual Review" };
+};
+
+// --- AI ANALYZER ---
+async function analyzeWithAI(log, memoryContext = "") {
+    const provider = getProvider();
+    return provider.analyze(log, memoryContext);
 }
 
 // --- MITIGATION AGENT ---
@@ -99,12 +131,12 @@ export const MitigationAgent = {
     }
 };
 
-// --- ORCHESTRATOR ---
+// --- SOC ORCHESTRATOR ---
 export const SOCAgent = {
     async processLog(log) {
         broadcastReasoning("🧠 AI SOC Brain: Correlating telemetry...");
         const context = MemoryAgent.getRecentContextSummary();
-        const analysis = await analyzeWithGemini(log, context.recentAttacks.join(", "));
+        const analysis = await analyzeWithAI(log, context.recentAttacks.join(", "));
 
         if (analysis.attack !== "None") {
             MemoryAgent.logEvent({ src_ip: log.src_ip, attack: analysis.attack, severity: analysis.severity });

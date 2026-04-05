@@ -6,15 +6,10 @@ Configure
 .env
 : Ensure GEMINI_API_KEY and SOC_API_KEY are set.
 Start the SOC:
-bash
-npm start
-Start the Capture Agent:
-bash
-node capture/zeekWatcher.js
-
-Comment
-Ctrl+Alt+M
-
+Terminal 1 — Backend server:
+npm run dev
+Terminal 2 — Network capture:
+node capture/capture.js
 
 
 

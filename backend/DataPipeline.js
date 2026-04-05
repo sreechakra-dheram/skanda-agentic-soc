@@ -1,7 +1,5 @@
-import { SOCAgent, MitigationAgent } from "./SOCAgent.js";
-import { ThreatRadar } from "./ThreatRadar.js";
+import { SOCAgent, MitigationAgent, ThreatRadar, MemoryAgent, saveThreat, getThreatsDB } from "./SOCAgent.js";
 import { broadcast, broadcastReasoning } from "./websocket.js";
-import { saveThreat, getThreatsDB } from "./Database.js";
 
 let packetCounter = 0;
 const SAMPLING_RATE = 100;
@@ -29,37 +27,28 @@ export const DataPipeline = {
         try {
             const rawLog = req.body;
 
-            // --- FILTER LOCALHOST NOISE ---
             if (rawLog.src_ip === "127.0.0.1" || rawLog.dst_ip === "127.0.0.1" || rawLog.src_ip === "::1" || rawLog.dst_ip === "::1") {
                 return res.json({ status: "filtered_localhost" });
             }
 
             packetCounter++;
-
             if (packetCounter % SAMPLING_RATE !== 0) {
                 return res.json({ status: "sampled", count: packetCounter });
             }
 
-            // 1. Broadcast raw telemetry to UI
             broadcast({ type: "NEW_LOG", payload: rawLog });
             broadcastReasoning(`📡 Packet #${packetCounter} captured. Analyzing...`);
 
-            // 2. Process through AI Agent
             const aiResult = await SOCAgent.processLog(rawLog);
-
-            // 3. Transform to Threat Model
             const threat = ThreatRadar.createThreat(aiResult);
             threat.src_ip = rawLog.src_ip;
 
-            // 4. Calculate Dynamic Risk
-            const history = SOCAgent.MemoryAgent ? SOCAgent.MemoryAgent.getIPHistory(rawLog.src_ip) : null;
+            const history = MemoryAgent.getIPHistory(rawLog.src_ip);
             threat.riskScore = ThreatRadar.calculateRisk(threat, history);
 
-            // 5. Persist and Broadcast
             saveThreat(threat);
             broadcast({ type: "THREAT_DETECTED", payload: threat });
 
-            // 6. Automated Response
             const mitigation = await MitigationAgent.execute(threat);
             if (mitigation) broadcast({ type: "MITIGATION_STATUS", payload: mitigation });
 

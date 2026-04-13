@@ -6,32 +6,26 @@
 
 - **Live Telemetry Monitoring**: Real-time packet inspection via Zeek.
 - **Agentic AI Analysis**: Multi-stage reasoning pipeline (Analyst, Planner, Responder) using Gemini.
-- **Interactive Dashboard**: 3-6-3 grid layout with live wire stream, network map, and analytics.
+- **Interactive Dashboard**: Real-time wire stream, network maps, and analytics.
 - **Automated Mitigation**: Autonomous threat neutralization with safe-mode approval.
+- **AI Forensic Chatbot**: Chat with your security database to identify patterns and find recent attacks.
 - **Forensic Reporting**: Instant PDF report generation for detected incidents.
-- **Wireshark Integration**: Support for importing and replaying `.json` packet captures.
+- **PCAP Support**: Upload and analyze Wireshark/PCAP captures directly from the dashboard.
 
 ## 🛠️ Tech Stack
 
-- **Frontend**: Vanilla HTML5, CSS3, Tailwind CSS, vis-network, Chart.js.
-- **Backend**: Node.js, Express, WebSocket (`ws`).
-- **Network**: Zeek (Network Monitoring), Microsoft Message Analyzer (Windows Bridge).
-- **AI**: Gemini 1.5 Flash.
+- **Frontend**: Vanilla HTML5, CSS3, Tailwind CSS (via CDN), Lucide Icons.
+- **Backend**: Node.js, Express, WebSocket (`ws`), Axios.
+- **AI**: Gemini 1.5 Flash (Google AI Studio).
 
 ## 📥 Installation
 
-1. **Clone the repository**:
-   ```bash
-   git clone <repository-url>
-   cd skanda-prime-soc
-   ```
-
-2. **Install dependencies**:
+1. **Install dependencies**:
    ```bash
    npm install
    ```
 
-3. **Configure Environment**:
+2. **Configure Environment**:
    Create a `.env` file in the root directory:
    ```env
    GEMINI_API_KEY=your_gemini_api_key
@@ -45,24 +39,25 @@
 
 ## 🏃 Running the SOC
 
-To have a fully functional SOC, you need to run three components:
+To have a fully functional SOC locally, follow these steps:
 
 ### 1. Start the Backend Server
 ```bash
 npm run dev
 ```
-The dashboard will be available at `http://127.0.0.1:5000`.
+The dashboard will be available at `http://localhost:5000`.
 
-### 2. Start the Windows Telemetry Bridge
-(Required for live Windows network monitoring)
+### 2. Start the Telemetry Capture Agent
+(Required for live network monitoring on Windows)
 ```bash
-node capture/liveBridge.js
+node capture/capture.js
 ```
 
-### 3. Start the Zeek Log Watcher
-```bash
-node capture/zeekWatcher.js
-```
+### 3. Using the AI Chatbot
+Once the dashboard is open, look for the **blue message icon** in the bottom-right corner. You can ask:
+- *"Show me recent attacks."*
+- *"Which IP is most suspicious?"*
+- *"Give me a summary of last hour's activity."*
 
 ## 📁 Directory Structure
 

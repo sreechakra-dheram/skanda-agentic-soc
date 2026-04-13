@@ -3,7 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import { initWebSocket } from "./websocket.js";
 import { DataPipeline } from "./DataPipeline.js";
-import { MitigationAgent, ThreatRadar } from "./SOCAgent.js";
+import { MitigationAgent, ThreatRadar, SOCAgent } from "./SOCAgent.js";
 import { getProvider, setProvider, getAvailableModels } from "./AIProvider.js";
 
 dotenv.config();
@@ -55,6 +55,23 @@ router.post("/model", (req, res) => {
         res.json({ status: "ok", active: provider.name });
     } catch (err) {
         res.status(400).json({ error: err.message });
+    }
+});
+
+router.post("/chat", async (req, res) => {
+    const { message, session_context } = req.body;
+    try {
+        // Merge persistent DB context with live frontend session data
+        const dbContext = await SOCAgent.getChatContext();
+        const combined = {
+            ...JSON.parse(dbContext),
+            live_session: session_context || {}
+        };
+        const response = await getProvider().chat(message, JSON.stringify(combined));
+        res.json({ response });
+    } catch (err) {
+        console.error("Chat error:", err);
+        res.status(500).json({ error: "Chat service unavailable" });
     }
 });
 

@@ -307,24 +307,206 @@
       background-color: #fef2f2;
     }
 
-    .report-card.HIGH {
-      border-left-color: #f97316;
-      background-color: #fff7ed;
+    .report-card.INFO {
+      border-left-color: #94a3b8;
     }
 
-    .report-card.MEDIUM {
-      border-left-color: #eab308;
-      background-color: #fefce8;
+    /* Chatbot Styles */
+    #ai-chatbot-container {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 1rem;
     }
 
-    .report-card.LOW {
-      border-left-color: #3b82f6;
-      background-color: #eff6ff;
+    #chat-window {
+      width: 360px;
+      height: 480px;
+      display: flex;
+      flex-direction: column;
+      transform: translateY(20px);
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      /* Solid opaque background — no more transparency */
+      background-color: #0f172a;
+      border: 1px solid rgba(51, 65, 85, 0.8);
+      border-radius: 14px;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(59, 130, 246, 0.15);
+    }
+
+    #chat-window.open {
+      transform: translateY(0);
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    #chat-messages {
+      background-color: #0f172a;
+    }
+
+    .chat-bubble-received {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px 12px 12px 2px;
+    }
+
+    .chat-bubble-sent {
+      background: rgba(37, 99, 235, 0.25);
+      border: 1px solid rgba(37, 99, 235, 0.5);
+      border-radius: 12px 12px 2px 12px;
+      align-self: flex-end;
+    }
+
+    /* ---- LOGIN PAGE ---- */
+    #login-page {
+      background: #020617;
+      background-image:
+        radial-gradient(ellipse at 20% 50%, rgba(16, 185, 129, 0.06) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 20%, rgba(59, 130, 246, 0.07) 0%, transparent 60%),
+        linear-gradient(rgba(16, 185, 129, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(16, 185, 129, 0.02) 1px, transparent 1px);
+      background-size: auto, auto, 40px 40px, 40px 40px;
+    }
+
+    .login-card {
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(51, 65, 85, 0.8);
+      box-shadow: 0 40px 80px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(16, 185, 129, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    }
+
+    .login-input {
+      background: rgba(2, 6, 23, 0.8);
+      border: 1px solid rgba(51, 65, 85, 0.8);
+      color: #e2e8f0;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .login-input:focus {
+      border-color: rgba(16, 185, 129, 0.6);
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+      outline: none;
+    }
+
+    .login-input::placeholder {
+      color: #475569;
+    }
+
+    @keyframes login-slide-up {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .login-animate {
+      animation: login-slide-up 0.6s ease-out forwards;
+    }
+
+    .login-animate-delay {
+      animation: login-slide-up 0.6s 0.2s ease-out both;
+    }
+
+    .cred-badge {
+      background: rgba(16, 185, 129, 0.08);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      border-radius: 8px;
     }
   </style>
 </head>
 
 <body class="h-screen overflow-hidden grid-bg text-slate-300 select-none">
+
+  <!-- =================== LOGIN PAGE =================== -->
+  <div id="login-page"
+    class="absolute inset-0 z-[200] flex items-center justify-center transition-opacity duration-700">
+    <!-- Animated background rings -->
+    <div class="absolute inset-0 pointer-events-none overflow-hidden opacity-30">
+      <div
+        class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] border border-emerald-500/20 rounded-full spin-slow">
+      </div>
+      <div
+        class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[450px] h-[450px] border border-blue-500/15 rounded-full spin-slow"
+        style="animation-direction:reverse;animation-duration:12s"></div>
+    </div>
+
+    <div class="login-card rounded-2xl p-8 w-full max-w-sm mx-4 relative z-10">
+      <!-- Logo -->
+      <div class="flex flex-col items-center mb-7 login-animate">
+        <div class="relative mb-3">
+          <i data-lucide="shield-check" class="w-14 h-14 text-emerald-500"></i>
+          <span class="absolute top-0 right-0 w-3.5 h-3.5 bg-emerald-400 rounded-full animate-ping"></span>
+        </div>
+        <h1 class="text-2xl font-bold tracking-widest uppercase text-white">SkANDA <span
+            class="text-emerald-400">PRIME</span></h1>
+        <p class="text-[10px] text-slate-500 uppercase tracking-widest mt-1 font-mono">Agentic SOC Platform — Secure
+          Access</p>
+      </div>
+
+      <!-- Error msg -->
+      <div id="login-error"
+        class="hidden mb-4 px-3 py-2 rounded bg-red-900/30 border border-red-700/60 text-red-400 text-[11px] font-mono flex items-center gap-2">
+        <i data-lucide="alert-triangle" class="w-3.5 h-3.5 flex-shrink-0"></i>
+        <span id="login-error-text">Invalid credentials. Access denied.</span>
+      </div>
+
+      <!-- Form -->
+      <form onsubmit="handleLogin(event)" class="space-y-4 login-animate-delay">
+        <div>
+          <label class="block text-[10px] text-slate-500 uppercase tracking-widest mb-1.5 font-bold">Analyst ID</label>
+          <div class="relative">
+            <i data-lucide="user" class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500"></i>
+            <input id="login-username" type="text" placeholder="Enter analyst ID" autocomplete="username"
+              class="login-input w-full pl-9 pr-4 py-2.5 rounded-lg text-sm font-mono">
+          </div>
+        </div>
+        <div>
+          <label class="block text-[10px] text-slate-500 uppercase tracking-widest mb-1.5 font-bold">Passphrase</label>
+          <div class="relative">
+            <i data-lucide="lock" class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500"></i>
+            <input id="login-password" type="password" placeholder="Enter passphrase" autocomplete="current-password"
+              class="login-input w-full pl-9 pr-10 py-2.5 rounded-lg text-sm font-mono">
+            <button type="button" onclick="toggleLoginPwd()"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition">
+              <i data-lucide="eye" id="pwd-eye" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" id="login-btn"
+          class="w-full mt-2 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold py-3 rounded-lg transition-all flex items-center justify-center gap-2 tracking-wider text-sm shadow-[0_0_20px_rgba(16,185,129,0.25)]">
+          <i data-lucide="log-in" class="w-4 h-4"></i>
+          <span>AUTHENTICATE</span>
+        </button>
+      </form>
+
+      <!-- Demo Credentials Card -->
+      <!-- <div class="cred-badge mt-5 p-3">
+        <div class="flex items-center gap-1.5 mb-2">
+          <i data-lucide="key" class="w-3 h-3 text-emerald-400"></i>
+          <span class="text-[9px] text-emerald-400 uppercase font-bold tracking-widest">Demo Credentials</span>
+        </div>
+        <div class="grid grid-cols-2 gap-x-4 gap-y-1 font-mono text-[10px]">
+          <span class="text-slate-500">Analyst ID</span>
+          <span class="text-emerald-300 select-text">admin</span>
+          <span class="text-slate-500">Passphrase</span>
+          <span class="text-emerald-300 select-text">skanda@soc</span>
+        </div>
+      </div> -->
+      
+      <div class="mt-4 text-center text-[9px] text-slate-600 font-mono">SkANDA v3.2.0 &bull; Internal Use Only</div>
+    </div>
+  </div>
 
   <!-- LANDING PAGE (HOME SCREEN) -->
   <div id="landing-page"
@@ -481,11 +663,11 @@
             </div>
           </div>
           <div
-            class="flex px-2 py-1 bg-slate-950 text-[10px] text-slate-500 font-bold border-b border-slate-800 uppercase">
-            <span class="w-10">PROTO</span>
-            <span class="w-24">SOURCE</span>
+            class="flex px-2 py-1 bg-slate-950 text-[10px] text-slate-500 font-bold border-b border-slate-800 uppercase items-center">
+            <span class="w-12 text-center">PROTO</span>
+            <span class="w-28 ml-2">SOURCE</span>
             <span class="w-4"></span>
-            <span class="w-24">DEST</span>
+            <span class="w-28">DEST</span>
             <span class="ml-auto">LEN</span>
           </div>
           <div id="packet-stream" class="flex-1 overflow-y-auto font-mono text-[10px] space-y-[1px] bg-slate-950/30">
@@ -840,8 +1022,53 @@
   </div>
 
   <script>
-    // ... (existing variable definitions) ...
-    // Initialize Lucide icons
+    // --- LOGIN PAGE LOGIC ---
+    const VALID_USERS = { 'admin': 'skanda@soc' };
+
+    function handleLogin(e) {
+      e.preventDefault();
+      const username = document.getElementById('login-username').value.trim();
+      const password = document.getElementById('login-password').value;
+      const errorEl = document.getElementById('login-error');
+      const btn = document.getElementById('login-btn');
+
+      if (VALID_USERS[username] && VALID_USERS[username] === password) {
+        // Success — animate out
+        errorEl.classList.add('hidden');
+        btn.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i><span>ACCESS GRANTED</span>';
+        btn.className = btn.className.replace('bg-emerald-600 hover:bg-emerald-500', 'bg-blue-600');
+        lucide.createIcons();
+        setTimeout(() => {
+          const loginPage = document.getElementById('login-page');
+          loginPage.classList.add('opacity-0', 'pointer-events-none');
+          setTimeout(() => loginPage.classList.add('hidden'), 700);
+        }, 800);
+      } else {
+        // Failure
+        errorEl.classList.remove('hidden');
+        document.getElementById('login-error-text').textContent =
+          username === '' ? 'Analyst ID is required.' :
+            password === '' ? 'Passphrase is required.' :
+              'Invalid credentials. Access denied.';
+        const card = document.querySelector('.login-card');
+        card.style.animation = 'none';
+        card.style.transform = 'translateX(-8px)';
+        setTimeout(() => { card.style.transform = 'translateX(8px)'; }, 80);
+        setTimeout(() => { card.style.transform = 'translateX(-4px)'; }, 160);
+        setTimeout(() => { card.style.transform = 'translateX(0)'; }, 240);
+      }
+    }
+
+    function toggleLoginPwd() {
+      const input = document.getElementById('login-password');
+      const icon = document.getElementById('pwd-eye');
+      const isHidden = input.type === 'password';
+      input.type = isHidden ? 'text' : 'password';
+      icon.setAttribute('data-lucide', isHidden ? 'eye-off' : 'eye');
+      lucide.createIcons();
+    }
+
+    // Initialize Lucide icons (login page)
     lucide.createIcons();
 
 
@@ -1138,11 +1365,11 @@
       if (proto.includes('HTTP')) colorClass = 'bg-amber-900/40 text-amber-400 border border-amber-800/50';
 
       row.innerHTML = `
-        <span class="${colorClass} px-1.5 py-0.5 rounded text-[8px] font-bold min-w-[45px] text-center uppercase tracking-tighter">${proto}</span>
-        <span class="text-slate-400 w-24 text-[9px] font-mono">${src}</span>
-        <span class="text-slate-600 w-4 text-center text-[9px]">»</span>
-        <span class="text-slate-400 w-24 text-[9px] font-mono">${dst}</span>
-        <span class="text-slate-600 text-[9px] ml-auto font-mono">${size}b</span>
+        <span class="${colorClass} px-1.5 py-0.5 rounded text-[8px] font-bold w-12 flex-shrink-0 text-center uppercase tracking-tighter">${proto}</span>
+        <span class="text-slate-400 w-28 ml-2 text-[9px] font-mono truncate" title="${src}">${src}</span>
+        <span class="text-slate-600 flex-shrink-0 px-1 text-center text-[9px]">»</span>
+        <span class="text-slate-400 w-28 text-[9px] font-mono truncate" title="${dst}">${dst}</span>
+        <span class="text-slate-600 text-[9px] flex-shrink-0 ml-auto font-mono">${size}b</span>
       `;
 
       const streamEl = document.getElementById('packet-stream');
@@ -1831,7 +2058,174 @@
 
     initSocket(handleThreat, handleReasoning, handleMitigation, handleRawLog);
     loadActiveModel();
+
+    // --- CHATBOT LOGIC ---
+    function toggleChat() {
+      const windowEl = document.getElementById('chat-window');
+      const isOpen = windowEl.classList.toggle('open');
+      const icon = document.getElementById('chat-icon-open');
+      if (isOpen) {
+        icon.setAttribute('data-lucide', 'x');
+      } else {
+        icon.setAttribute('data-lucide', 'message-square');
+      }
+      lucide.createIcons();
+      if (isOpen) document.getElementById('chat-input').focus();
+    }
+
+    // Build a live session context snapshot from frontend state
+    function buildSessionContext() {
+      const criticalThreats = detectedThreats.filter(t => t.severity === 'CRITICAL');
+      const lastCritical = criticalThreats.length > 0 ? criticalThreats[criticalThreats.length - 1] : null;
+      const threatTypeCounts = {};
+      detectedThreats.forEach(t => { threatTypeCounts[t.type || 'Unknown'] = (threatTypeCounts[t.type || 'Unknown'] || 0) + 1; });
+      const domainMap = {};
+      detectedThreats.forEach(t => { domainMap[t.src] = (domainMap[t.src] || 0) + 1; });
+      const topAttacker = Object.entries(domainMap).sort((a, b) => b[1] - a[1])[0];
+
+      return {
+        session_summary: {
+          total_packets_analyzed: packetCount,
+          total_threats_detected: detectedThreats.length,
+          critical_count: criticalThreats.length,
+          current_threat_level: document.getElementById('global-threat-level')?.innerText || 'LOW',
+          packets_per_sec: currentPps
+        },
+        last_critical_attack: lastCritical ? {
+          title: lastCritical.title,
+          src: lastCritical.src,
+          type: lastCritical.type,
+          severity: lastCritical.severity,
+          timestamp: lastCritical.timestamp,
+          description: lastCritical.desc,
+          recommendation: lastCritical.rec
+        } : null,
+        all_detected_threats: detectedThreats.map(t => ({
+          title: t.title,
+          severity: t.severity,
+          src: t.src,
+          type: t.type,
+          timestamp: t.timestamp,
+          risk_score: t.riskScore
+        })),
+        attack_type_breakdown: threatTypeCounts,
+        top_attacking_ip: topAttacker ? { ip: topAttacker[0], hit_count: topAttacker[1] } : null,
+        network_safety_score: detectedThreats.length === 0 ? 100 :
+          Math.max(0, Math.round(100 - (criticalThreats.length * 20) - ((detectedThreats.length - criticalThreats.length) * 5)))
+      };
+    }
+
+    async function sendChat() {
+      const input = document.getElementById('chat-input');
+      const msg = input.value.trim();
+      if (!msg) return;
+
+      appendChatMessage(msg, 'sent');
+      input.value = '';
+
+      // Typing indicator
+      const typingId = 'typing-' + Date.now();
+      appendChatTyping(typingId);
+
+      try {
+        const res = await fetch(`${API_BASE}/chat?api_key=skanda_secret_123`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: msg,
+            session_context: buildSessionContext()  // live frontend telemetry
+          })
+        });
+        const data = await res.json();
+        const typingEl = document.getElementById(typingId);
+        if (typingEl) typingEl.remove();
+        appendChatMessage(data.response || "I couldn't process that request.", 'received');
+      } catch (err) {
+        const typingEl = document.getElementById(typingId);
+        if (typingEl) typingEl.remove();
+        appendChatMessage('⚠ Cannot reach SOC AI service. Is the backend server running?', 'received');
+      }
+    }
+
+    function appendChatTyping(id) {
+      const container = document.getElementById('chat-messages');
+      const div = document.createElement('div');
+      div.id = id;
+      div.className = 'chat-bubble-received p-2.5 max-w-[90%] flex items-center gap-2';
+      div.innerHTML = `<span class="flex gap-1">
+        <span class="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce" style="animation-delay:0ms"></span>
+        <span class="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce" style="animation-delay:150ms"></span>
+        <span class="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce" style="animation-delay:300ms"></span>
+      </span><span class="text-[9px] text-slate-500 italic">SkANDA thinking...</span>`;
+      container.appendChild(div);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function appendChatMessage(text, side, id = null) {
+      const container = document.getElementById('chat-messages');
+      const div = document.createElement('div');
+      div.className = side === 'sent'
+        ? 'chat-bubble-sent p-2 px-3 max-w-[82%] text-blue-100 self-end'
+        : 'chat-bubble-received p-3 max-w-[92%] leading-relaxed';
+      if (id) div.id = id;
+      // Convert basic markdown to HTML
+      let formatted = text
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')  // sanitize
+        .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em class="text-slate-300">$1</em>')
+        .replace(/`([^`]+)`/g, '<code class="bg-slate-950 text-emerald-400 px-1 rounded text-[9px]">$1</code>')
+        .replace(/\n/g, '<br>');
+      div.innerHTML = formatted;
+      container.appendChild(div);
+      container.scrollTop = container.scrollHeight;
+    }
   </script>
+
+  <!-- AI Chatbot Interface -->
+  <div id="ai-chatbot-container">
+    <div id="chat-window" class="overflow-hidden flex flex-col">
+      <!-- Chat Header -->
+      <div class="p-3 border-b border-slate-700/80 flex justify-between items-center"
+        style="background:#0f172a;border-radius:14px 14px 0 0;">
+        <div class="flex items-center gap-2">
+          <div class="w-2.5 h-2.5 bg-blue-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.8)]"></div>
+          <span class="text-[11px] font-bold uppercase tracking-wider text-blue-300">SkANDA SOC Agent</span>
+          <span
+            class="text-[9px] bg-emerald-900/60 text-emerald-400 border border-emerald-700/50 px-1.5 py-0.5 rounded font-mono">GEMINI</span>
+        </div>
+        <button onclick="toggleChat()"
+          class="text-slate-500 hover:text-red-400 transition p-1 rounded hover:bg-slate-800">
+          <i data-lucide="x" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+      <!-- Messages -->
+      <div id="chat-messages"
+        class="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar text-[11px] text-slate-300 font-mono flex flex-col">
+        <div class="chat-bubble-received p-3 text-[10px] leading-relaxed">
+          <span class="text-blue-400 font-bold">SkANDA &rsaquo;</span> SOC Agent online. I have access to your current
+          session's threat telemetry, packet data, and incident history. Ask me about active threats, network safety
+          score, attack patterns, and more.
+        </div>
+      </div>
+      <!-- Input -->
+      <div class="p-2.5 border-t border-slate-700/80 flex gap-2"
+        style="background:#0a111e;border-radius:0 0 14px 14px;">
+        <input type="text" id="chat-input" placeholder="e.g. What was the last critical attack?"
+          class="flex-1 rounded-md px-3 py-2 text-[10px] text-slate-200 focus:outline-none focus:border-blue-500 transition-colors placeholder-slate-600"
+          style="background:#1e293b;border:1px solid #334155;" onkeypress="if(event.key === 'Enter') sendChat()">
+        <button onclick="sendChat()" title="Send"
+          class="bg-blue-600 hover:bg-blue-500 text-white px-2.5 rounded-md transition border border-blue-500/70 shadow-lg group flex items-center">
+          <i data-lucide="send"
+            class="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform"></i>
+        </button>
+      </div>
+    </div>
+    <!-- Toggle Button -->
+    <button onclick="toggleChat()" id="chat-toggle" title="SkANDA AI"
+      class="w-12 h-12 bg-blue-600 hover:bg-blue-500 text-white rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(37,99,235,0.5)] transition-all transform hover:scale-110 active:scale-95 border border-blue-400">
+      <i data-lucide="message-square" id="chat-icon-open" class="w-5 h-5"></i>
+    </button>
+  </div>
 
 </body>
 

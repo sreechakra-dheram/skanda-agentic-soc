@@ -143,5 +143,18 @@ export const SOCAgent = {
         }
 
         return analysis;
+    },
+    async getChatContext() {
+        const threats = getThreatsDB().slice(-20); // Last 20 threats
+        const memory = MemoryAgent._load();
+        return JSON.stringify({
+            recent_incidents: threats,
+            top_offenders: Object.entries(memory.ipHistory)
+                .sort((a, b) => b[1].count - a[1].count)
+                .slice(0, 5)
+                .map(([ip, data]) => ({ ip, ...data })),
+            system_status: "Operational",
+            timestamp: new Date().toISOString()
+        });
     }
 };
